@@ -8,6 +8,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -45,14 +46,16 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    if (UEnhancedInputComponent* Input = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+    if (UEnhancedInputComponent* EnhancedInput = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
     {
-        Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-        Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
-        Input->BindAction(AimAction, ETriggerEvent::Started, this, &APlayerCharacter::StartAiming);
-        Input->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAiming);
-        Input->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::Fire);
-        Input->BindAction(SlowMoAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSlowMo);
+        EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+        EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+        EnhancedInput->BindAction(AimAction, ETriggerEvent::Started, this, &APlayerCharacter::StartAiming);
+        EnhancedInput->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAiming);
+        EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::Fire);
+        EnhancedInput->BindAction(SlowMoAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSlowMo);
+        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprinting);
+        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprinting);
     }
 }
 
@@ -91,5 +94,20 @@ void APlayerCharacter::StartSlowMo()
 {
     float CurrentDilation = UGameplayStatics::GetGlobalTimeDilation(this);
     UGameplayStatics::SetGlobalTimeDilation(this, (CurrentDilation < 1.f) ? 1.f : 0.25f);
+}
+
+void APlayerCharacter::StartSprinting()
+{
+    if (!bIsAiming) // Optional: block sprinting while aiming
+    {
+        bIsSprinting = true;
+        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+    }
+}
+
+void APlayerCharacter::StopSprinting()
+{
+    bIsSprinting = false;
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 

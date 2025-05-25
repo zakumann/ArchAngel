@@ -26,6 +26,9 @@ protected:
     void StopAiming();
     void Fire();
     void StartSlowMo();
+    // Sprint input actions
+    void StartSprinting();
+    void StopSprinting();
 
 private:
     UPROPERTY(VisibleAnywhere)
@@ -52,5 +55,16 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* SlowMoAction;
 
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* SprintAction;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Movement")
+    float WalkSpeed = 300.f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Movement")
+    float SprintSpeed = 600.f;
+
+
     bool bIsAiming;
+    bool bIsSprinting;
 };
