@@ -2,13 +2,14 @@
 
 
 #include "PlayerCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -16,15 +17,17 @@ APlayerCharacter::APlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 300.f;
-    CameraBoom->bUsePawnControlRotation = true;
+    // Configure character movement
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; // Default walk speed
 
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom);
+    // Create and configure the CapsuleComponent
+    GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 
-    bUseControllerRotationYaw = true;
+    // Create and attach the First-Person CameraComponent
+    FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+    FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
+    FirstPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, 64.0f)); // Position the camera
+    FirstPersonCamera->bUsePawnControlRotation = true; // Rotate camera with controller
 }
 
 // Called when the game starts or when spawned
@@ -36,7 +39,7 @@ void APlayerCharacter::BeginPlay()
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
-            Subsystem->AddMappingContext(InputMapping, 0);
+            Subsystem->AddMappingContext(InputMappingContext, 0);
         }
     }
 }
@@ -46,68 +49,56 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    if (UEnhancedInputComponent* EnhancedInput = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+    // Cast to EnhancedInputComponent
+    if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
-        EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-        EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
-        EnhancedInput->BindAction(AimAction, ETriggerEvent::Started, this, &APlayerCharacter::StartAiming);
-        EnhancedInput->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAiming);
-        EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::Fire);
-        EnhancedInput->BindAction(SlowMoAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSlowMo);
-        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprinting);
-        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprinting);
+        EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+
+        // Bind the look input action
+        EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+
+        // Bind the Jump
+        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+        // Bind Sprint
+        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartSprint);
+        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
+
+        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StopSprint);
+        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
     }
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-    FVector2D Movement = Value.Get<FVector2D>();
-    AddMovementInput(GetActorForwardVector(), Movement.Y);
-    AddMovementInput(GetActorRightVector(), Movement.X);
+    FVector2D MovementVector = Value.Get<FVector2D>();
+
+    // Add movement input along the forward and right vectors
+    AddMovementInput(GetActorForwardVector(), MovementVector.Y);
+    AddMovementInput(GetActorRightVector(), MovementVector.X);
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
-    FVector2D LookAxis = Value.Get<FVector2D>();
-    AddControllerYawInput(LookAxis.X);
-    AddControllerPitchInput(LookAxis.Y);
+    FVector2D LookAxisVector = Value.Get<FVector2D>();
+    AddControllerYawInput(LookAxisVector.X);
+    AddControllerPitchInput(LookAxisVector.Y);
 }
 
-void APlayerCharacter::StartAiming()
+void APlayerCharacter::StartSprint()
 {
-    bIsAiming = true;
-    CameraBoom->TargetArmLength = 200.f;
+    GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 }
 
-void APlayerCharacter::StopAiming()
+void APlayerCharacter::StopSprint()
 {
-    bIsAiming = false;
-    CameraBoom->TargetArmLength = 300.f;
-}
-
-void APlayerCharacter::Fire()
-{
-    // Call weapon class Fire() here
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
 void APlayerCharacter::StartSlowMo()
 {
     float CurrentDilation = UGameplayStatics::GetGlobalTimeDilation(this);
     UGameplayStatics::SetGlobalTimeDilation(this, (CurrentDilation < 1.f) ? 1.f : 0.25f);
-}
-
-void APlayerCharacter::StartSprinting()
-{
-    if (!bIsAiming) // Optional: block sprinting while aiming
-    {
-        bIsSprinting = true;
-        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-    }
-}
-
-void APlayerCharacter::StopSprinting()
-{
-    bIsSprinting = false;
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 

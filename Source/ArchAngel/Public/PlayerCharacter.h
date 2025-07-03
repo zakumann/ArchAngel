@@ -15,56 +15,51 @@ class ARCHANGEL_API APlayerCharacter : public ACharacter
 public:
 	APlayerCharacter();
 
+	// First-Person Camera
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	class UCameraComponent* FirstPersonCamera;
+
 protected:
+	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Input actions
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputMappingContext* InputMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* SprintAction;  // 추가된 스프린트 액션
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* FireAction;  // 추가된 스프린트 액션
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* SlowAction;
+
+	// Movement and look functions
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	void StartSprint();
+	void StopSprint();
+	void StartSlowMo();
+
+	/** Movement Speed */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float WalkSpeed = 600.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float SprintSpeed = 1200.0f;
+public:
+
+	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-    void Move(const FInputActionValue& Value);
-    void Look(const FInputActionValue& Value);
-    void StartAiming();
-    void StopAiming();
-    void Fire();
-    void StartSlowMo();
-    // Sprint input actions
-    void StartSprinting();
-    void StopSprinting();
-
-private:
-    UPROPERTY(VisibleAnywhere)
-    class USpringArmComponent* CameraBoom;
-
-    UPROPERTY(VisibleAnywhere)
-    class UCameraComponent* FollowCamera;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputMappingContext* InputMapping;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* MoveAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* LookAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* AimAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* FireAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* SlowMoAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* SprintAction;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float WalkSpeed = 300.f;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float SprintSpeed = 600.f;
-
-
-    bool bIsAiming;
-    bool bIsSprinting;
 };
