@@ -51,6 +51,7 @@ protected:
 	void StartSprint();
 	void StopSprint();
 	void StartSlowMo();
+	void Fire();
 
 	/** Movement Speed */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
