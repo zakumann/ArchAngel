@@ -7,18 +7,12 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "InputAction.h"
-#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-    // Configure character movement
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; // Default walk speed
 
     // Create and configure the CapsuleComponent
     GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
@@ -35,6 +29,9 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+    OriginalCameraOffset = FirstPersonCamera->GetRelativeLocation();
+    TargetCameraOffset = OriginalCameraOffset;
+
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
@@ -65,9 +62,24 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartSprint);
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
 
-        EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSlowMo);
+        EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleSlowMo);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
+
+        // Lean
+        EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Started, this, &APlayerCharacter::OnLeanLeft);
+        EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
+        EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Started, this, &APlayerCharacter::OnLeanRight);
+        EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
     }
+}
+
+void APlayerCharacter::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    FVector Curr = FirstPersonCamera->GetRelativeLocation();
+    FVector NewLoc = FMath::VInterpTo(Curr, TargetCameraOffset, DeltaSeconds, LeanInterpSpeed);
+    FirstPersonCamera->SetRelativeLocation(NewLoc);
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
@@ -96,13 +108,30 @@ void APlayerCharacter::StopSprint()
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
-void APlayerCharacter::StartSlowMo()
+void APlayerCharacter::ToggleSlowMo()
 {
-    float CurrentDilation = UGameplayStatics::GetGlobalTimeDilation(this);
-    UGameplayStatics::SetGlobalTimeDilation(this, (CurrentDilation < 1.f) ? 1.f : 0.25f);
+    if (!GetWorld()) return;
+    bIsSlowMo = !bIsSlowMo;
+    GetWorld()->GetWorldSettings()->SetTimeDilation(bIsSlowMo ? 0.25f : 1.f);
 }
 
 void APlayerCharacter::Fire()
 {
 }
+
+void APlayerCharacter::OnLeanLeft(const FInputActionValue& Value)
+{
+    TargetCameraOffset = OriginalCameraOffset + FVector(0, -LeanOffsetAmount, 0);
+}
+
+void APlayerCharacter::OnLeanRight(const FInputActionValue& Value)
+{
+    TargetCameraOffset = OriginalCameraOffset + FVector(0, LeanOffsetAmount, 0);
+}
+
+void APlayerCharacter::OnStopLean(const FInputActionValue& Value)
+{
+    TargetCameraOffset = OriginalCameraOffset;
+}
+
 
