@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -70,6 +71,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
         EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Started, this, &APlayerCharacter::OnLeanRight);
         EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
+
+        EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
     }
 }
 
@@ -80,6 +83,20 @@ void APlayerCharacter::Tick(float DeltaSeconds)
     FVector Curr = FirstPersonCamera->GetRelativeLocation();
     FVector NewLoc = FMath::VInterpTo(Curr, TargetCameraOffset, DeltaSeconds, LeanInterpSpeed);
     FirstPersonCamera->SetRelativeLocation(NewLoc);
+}
+
+void APlayerCharacter::Interact(const FInputActionValue& Value)
+{
+    FVector Start = FirstPersonCamera->GetComponentLocation();
+    FVector End = Start + FirstPersonCamera->GetForwardVector() * 300.f;
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+
+    DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 2.f);
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
@@ -133,5 +150,3 @@ void APlayerCharacter::OnStopLean(const FInputActionValue& Value)
 {
     TargetCameraOffset = OriginalCameraOffset;
 }
-
-

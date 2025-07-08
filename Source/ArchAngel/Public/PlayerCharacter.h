@@ -50,9 +50,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* LeanRightAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
+
 	// First-Person Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* FirstPersonCamera;
+
+	UFUNCTION()
+	void Interact(const FInputActionValue& Value);
 
 	FVector OriginalCameraOffset;
 	FVector TargetCameraOffset;
