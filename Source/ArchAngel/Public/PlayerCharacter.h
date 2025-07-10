@@ -45,29 +45,45 @@ protected:
 	class UInputAction* SlowAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction* LeanLeftAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction* LeanRightAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* CrouchAction;
 
 	// First-Person Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* FirstPersonCamera;
+
+	// Crouch state
+	bool bWantsCrouch = false;
+	float CrouchAlpha = 0.f;
+
+	// Config
+	UPROPERTY(EditAnywhere, Category = "Crouch") 
+	float CrouchInterpSpeed = 4.f;
+
+	UPROPERTY(EditAnywhere, Category = "Crouch") 
+	float StandingCapsuleHalfHeight = 96.f;
+
+	UPROPERTY(EditAnywhere, Category = "Crouch")
+	float CrouchedCapsuleHalfHeight = 48.f;
+
+	UPROPERTY(EditAnywhere, Category = "Crouch") 
+	FVector CrouchedCameraOffset = FVector(0, 0, -40.f);
+
+	UPROPERTY(EditAnywhere, Category = "Crouch")
+	float UncrouchCheckRadius = 34.f;
+
+	UPROPERTY(EditAnywhere, Category = "Crouch")
+	float UncrouchCheckHeight = 50.f;
+
+	FVector OriginalCameraRelative;
 
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
 
 	FVector OriginalCameraOffset;
 	FVector TargetCameraOffset;
-
-	// Lean settings
-	UPROPERTY(EditAnywhere, Category = "Lean")
-	float LeanOffsetAmount = 25.f;
-	UPROPERTY(EditAnywhere, Category = "Lean")
-	float LeanInterpSpeed = 10.f;
 
 	// Movement and look functions
 	void Move(const FInputActionValue& Value);
@@ -77,9 +93,9 @@ protected:
 	void ToggleSlowMo();
 	void Fire();
 
-	void OnLeanLeft(const FInputActionValue& Value);
-	void OnLeanRight(const FInputActionValue& Value);
-	void OnStopLean(const FInputActionValue& Value);
+	// Crouch
+	void StartCrouch(const FInputActionValue& Value);
+	void StopCrouch(const FInputActionValue& Value);
 
 	// Functional state
 	bool bIsSlowMo = false;

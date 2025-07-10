@@ -15,8 +15,9 @@ APlayerCharacter::APlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-    // Create and configure the CapsuleComponent
-    GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
+    StandingCapsuleHalfHeight = 96.f;
+    CrouchedCapsuleHalfHeight = 48.f;
+    GetCapsuleComponent()->SetCapsuleHalfHeight(StandingCapsuleHalfHeight);
 
     // Create and attach the First-Person CameraComponent
     FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
@@ -66,23 +67,31 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleSlowMo);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
 
-        // Lean
-        EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Started, this, &APlayerCharacter::OnLeanLeft);
-        EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
-        EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Started, this, &APlayerCharacter::OnLeanRight);
-        EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopLean);
-
+        // Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
+
+        // Crouch
+        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::StartCrouch);
+        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopCrouch);
     }
 }
 
-void APlayerCharacter::Tick(float DeltaSeconds)
+void APlayerCharacter::Tick(float DeltaTime)
 {
-    Super::Tick(DeltaSeconds);
+    Super::Tick(DeltaTime);
 
-    FVector Curr = FirstPersonCamera->GetRelativeLocation();
-    FVector NewLoc = FMath::VInterpTo(Curr, TargetCameraOffset, DeltaSeconds, LeanInterpSpeed);
-    FirstPersonCamera->SetRelativeLocation(NewLoc);
+    float Target = bWantsCrouch ? 1.f : 0.f;
+    CrouchAlpha = FMath::FInterpTo(CrouchAlpha, Target, DeltaTime, CrouchInterpSpeed);
+
+    float NewHalf = FMath::Lerp(StandingCapsuleHalfHeight, CrouchedCapsuleHalfHeight, CrouchAlpha);
+    float HalfDelta = NewHalf - GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+    GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalf, true);
+
+    // Move actor to stay ground-aligned
+    AddActorWorldOffset(FVector(0, 0, -HalfDelta));
+
+    FVector NewCam = FMath::Lerp(OriginalCameraRelative, OriginalCameraRelative + CrouchedCameraOffset, CrouchAlpha);
+    FirstPersonCamera->SetRelativeLocation(NewCam);
 }
 
 void APlayerCharacter::Interact(const FInputActionValue& Value)
@@ -136,17 +145,36 @@ void APlayerCharacter::Fire()
 {
 }
 
-void APlayerCharacter::OnLeanLeft(const FInputActionValue& Value)
+void APlayerCharacter::StartCrouch(const FInputActionValue& Value)
 {
-    TargetCameraOffset = OriginalCameraOffset + FVector(0, -LeanOffsetAmount, 0);
+    bWantsCrouch = true;
 }
 
-void APlayerCharacter::OnLeanRight(const FInputActionValue& Value)
+void APlayerCharacter::StopCrouch(const FInputActionValue& Value)
 {
-    TargetCameraOffset = OriginalCameraOffset + FVector(0, LeanOffsetAmount, 0);
-}
+    // Set up collision query params and ignore ourselves
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);  // Correctly ignore the character :contentReference[oaicite:1]{index=1}
 
-void APlayerCharacter::OnStopLean(const FInputActionValue& Value)
-{
-    TargetCameraOffset = OriginalCameraOffset;
+    FVector Start = GetCapsuleComponent()->GetComponentLocation();
+    FVector End = Start + FVector(0, 0, UncrouchCheckHeight);
+    FHitResult Hit;
+
+    bool bBlocked = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(UncrouchCheckRadius), Params);
+
+    // Optional debug visualization
+    DrawDebugCapsule(GetWorld(),
+        End,
+        /* half-height */ 1.0f,
+        UncrouchCheckRadius,
+        FQuat::Identity,
+        bBlocked ? FColor::Red : FColor::Green,
+        false, 1.0f
+    );
+
+    // Only allow uncrouch when not blocked
+    if (!bBlocked)
+    {
+        bWantsCrouch = false;
+    }
 }
