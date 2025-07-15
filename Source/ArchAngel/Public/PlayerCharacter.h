@@ -60,8 +60,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SlowAction;
 
-	bool bIsAiming;
-    bool bIsSprinting;
+	bool bIsAiming = false;
+    bool bIsSprinting = false;
 
 	/** Movement Speed */
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
@@ -70,6 +70,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Movement")
     float SprintSpeed = 600.f;
 
-public:
+	// Smooth aiming variables
+    float AimArmLength;
+    float TargetAimArmLength;
+    float AimInterpSpeed = 12.f;
+    float DefaultFOV = 90.f;
+    float AimFOV = 65.f;
 
 };

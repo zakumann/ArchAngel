@@ -18,13 +18,20 @@ APlayerCharacter::APlayerCharacter()
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 300.f;
+    CameraBoom->TargetArmLength = 100.f;
     CameraBoom->bUsePawnControlRotation = true;
+    CameraBoom->bEnableCameraLag = true;
+    CameraBoom->CameraLagSpeed = 20.f;
+    CameraBoom->bEnableCameraRotationLag = true;
+    CameraBoom->CameraRotationLagSpeed = 20.f;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom);
 
     bUseControllerRotationYaw = true;
+
+    AimArmLength = CameraBoom->TargetArmLength;
+    TargetAimArmLength = AimArmLength;
 }
 
 // Called when the game starts or when spawned
@@ -39,6 +46,8 @@ void APlayerCharacter::BeginPlay()
             Subsystem->AddMappingContext(InputMappingContext, 0);
         }
     }
+
+    DefaultFOV = FollowCamera->FieldOfView;
 }
 
 // Called to bind functionality to input
@@ -69,6 +78,13 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    AimArmLength = FMath::FInterpTo(AimArmLength, TargetAimArmLength, DeltaTime, AimInterpSpeed);
+    CameraBoom->TargetArmLength = AimArmLength;
+
+    float CurrentFOV = FollowCamera->FieldOfView;
+    float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
@@ -90,12 +106,16 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::StartAiming()
 {
     bIsAiming = true;
-    CameraBoom->TargetArmLength = 200.f;
+    CameraBoom->TargetArmLength = 50.f;
+
+    // Cancel sprint when aiming
+    bIsSprinting = false;
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 void APlayerCharacter::StopAiming()
 {
     bIsAiming = false;
-    CameraBoom->TargetArmLength = 300.f;
+    CameraBoom->TargetArmLength = 100.f;
 }
 
 void APlayerCharacter::ToggleSlowMo()
@@ -106,11 +126,16 @@ void APlayerCharacter::ToggleSlowMo()
 
 void APlayerCharacter::StartSprint()
 {
-    GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+    if (!bIsAiming)
+    {
+        bIsSprinting = true;
+        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+    }
 }
 
 void APlayerCharacter::StopSprint()
 {
+    bIsSprinting = false;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
