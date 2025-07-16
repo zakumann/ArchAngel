@@ -9,6 +9,8 @@
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "InteractInterface.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -72,6 +74,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleSlowMo);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
+
+        //Interact
+        EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Interact);
     }
 }
 
@@ -137,6 +142,27 @@ void APlayerCharacter::StopSprint()
 {
     bIsSprinting = false;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void APlayerCharacter::Interact()
+{
+    FVector Start = FollowCamera->GetComponentLocation();
+    FVector End = Start + FollowCamera->GetForwardVector() * 500.f;
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+    {
+        if (Hit.GetActor() && Hit.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
+        {
+            IInteractInterface::Execute_OnInteract(Hit.GetActor(), this);
+        }
+    }
+
+    // debug line
+    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.f);
 }
 
 void APlayerCharacter::Fire()

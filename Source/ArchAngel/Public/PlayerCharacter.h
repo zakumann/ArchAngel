@@ -31,6 +31,7 @@ protected:
 	void ToggleSlowMo();
 	void StartSprint();
 	void StopSprint();
+	void Interact();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -59,6 +60,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SlowAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+    class UInputAction* InteractAction;
 
 	bool bIsAiming = false;
     bool bIsSprinting = false;
