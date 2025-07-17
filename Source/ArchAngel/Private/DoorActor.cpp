@@ -3,6 +3,8 @@
 
 #include "DoorActor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SphereComponent.h"
+#include "GameFramework/Character.h"
 
 // Sets default values
 ADoorActor::ADoorActor()
@@ -16,8 +18,11 @@ ADoorActor::ADoorActor()
     Door = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door"));
     Door->SetupAttachment(Frame);
 
-    TimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComp"));
+    ProximitySphere = CreateDefaultSubobject<USphereComponent>(TEXT("ProximitySphere"));
+    ProximitySphere->InitSphereRadius(300.f);
+    ProximitySphere->SetupAttachment(Frame);
 
+    TimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComp"));
 }
 
 // Called when the game starts or when spawned
@@ -25,30 +30,66 @@ void ADoorActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	TimelineCallback.BindDynamic(this, &ADoorActor::HandleProgress);
-    if (DoorCurve)
+	if (DoorCurve)
     {
-        TimelineComp->AddInterpFloat(DoorCurve, TimelineCallback);
+        FOnTimelineFloat Callback;
+        Callback.BindDynamic(this, &ADoorActor::HandleProgress);
+        TimelineComp->AddInterpFloat(DoorCurve, Callback);
+        TimelineComp->SetLooping(false);
+        TimelineComp->SetIgnoreTimeDilation(true);
     }
+
+    ProximitySphere->OnComponentBeginOverlap.AddDynamic(this, &ADoorActor::OnProximityBegin);
+    ProximitySphere->OnComponentEndOverlap.AddDynamic(this, &ADoorActor::OnProximityEnd);
 }
 
 void ADoorActor::HandleProgress(float Value)
 {
-	FRotator R(0.f, FMath::Lerp(0.f, 90.f, Value), 0.f);
-    Door->SetRelativeRotation(R);
+	float Yaw = Value * -90.f * OpenDirectionFactor;
+    Door->SetRelativeRotation(FRotator(0.f, Yaw, 0.f));
 }
 
 // Called every frame
 void ADoorActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+    TimelineComp->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, nullptr);
 }
 
 void ADoorActor::OnInteract_Implementation(AActor *Interactor)
 {
-	if (TimelineComp->IsPlaying())
-        TimelineComp->Reverse();
+	if (!bPlayerInRange || !Interactor) return;
+
+    if (!bIsOpen)
+    {
+        // Determine opening direction only when opening
+        FVector ToPlayer = Interactor->GetActorLocation() - GetActorLocation();
+        FVector Forward = Frame->GetForwardVector();
+        OpenDirectionFactor = (FVector::DotProduct(Forward, ToPlayer) > 0.f) ? 1.f : -1.f;
+
+        TimelineComp->PlayFromStart();
+        bIsOpen = true;
+    }
     else
-        TimelineComp->Play();
+    {
+        // Reuse the same OpenDirectionFactor when closing
+        TimelineComp->Reverse();
+        bIsOpen = false;
+    }
+}
+
+void ADoorActor::OnProximityBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+    {
+        bPlayerInRange = true;
+    }
+}
+
+void ADoorActor::OnProximityEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+    {
+        bPlayerInRange = false;
+    }
 }
