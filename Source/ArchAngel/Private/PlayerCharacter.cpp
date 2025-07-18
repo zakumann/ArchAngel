@@ -147,9 +147,9 @@ void APlayerCharacter::StopSprint()
 void APlayerCharacter::Interact()
 {
     FVector Start = FollowCamera->GetComponentLocation();
-    FVector End = Start + FollowCamera->GetForwardVector() * 500.f;
-
+    FVector End = Start + FollowCamera->GetForwardVector() * 500.f; // Adjust distance as needed
     FHitResult Hit;
+
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(this);
 

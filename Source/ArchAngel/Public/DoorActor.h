@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/TimelineComponent.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "InteractInterface.h"
 #include "DoorActor.generated.h"
 
@@ -29,7 +29,7 @@ protected:
     UStaticMeshComponent* Door;
 
     UPROPERTY(VisibleAnywhere)
-    USphereComponent* ProximitySphere;
+    UBoxComponent* ProximityBox;
 
     UPROPERTY(VisibleAnywhere)
     UTimelineComponent* TimelineComp;
@@ -55,5 +55,5 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
-
+    bool IsPlayerInRange() const { return bPlayerInRange; }
 };

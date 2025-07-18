@@ -3,7 +3,7 @@
 
 #include "DoorActor.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 
 // Sets default values
@@ -17,10 +17,16 @@ ADoorActor::ADoorActor()
 
     Door = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door"));
     Door->SetupAttachment(Frame);
+    Door->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    Door->SetCollisionObjectType(ECC_WorldStatic);
+    Door->SetCollisionResponseToAllChannels(ECR_Block);
+    Door->SetGenerateOverlapEvents(false);
 
-    ProximitySphere = CreateDefaultSubobject<USphereComponent>(TEXT("ProximitySphere"));
-    ProximitySphere->InitSphereRadius(300.f);
-    ProximitySphere->SetupAttachment(Frame);
+    ProximityBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ProximityBox"));
+    ProximityBox->InitBoxExtent(FVector(150.f, 55.f, 106.f));
+    ProximityBox->SetupAttachment(Frame);
+    ProximityBox->SetRelativeLocation(FVector(0.f, 0.f, 106.f));
+
 
     TimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComp"));
 }
@@ -39,8 +45,8 @@ void ADoorActor::BeginPlay()
         TimelineComp->SetIgnoreTimeDilation(true);
     }
 
-    ProximitySphere->OnComponentBeginOverlap.AddDynamic(this, &ADoorActor::OnProximityBegin);
-    ProximitySphere->OnComponentEndOverlap.AddDynamic(this, &ADoorActor::OnProximityEnd);
+    ProximityBox->OnComponentBeginOverlap.AddDynamic(this, &ADoorActor::OnProximityBegin);
+    ProximityBox->OnComponentEndOverlap.AddDynamic(this, &ADoorActor::OnProximityEnd);
 }
 
 void ADoorActor::HandleProgress(float Value)
