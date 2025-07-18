@@ -27,7 +27,6 @@ ADoorActor::ADoorActor()
     ProximityBox->SetupAttachment(Frame);
     ProximityBox->SetRelativeLocation(FVector(0.f, 0.f, 106.f));
 
-
     TimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComp"));
 }
 
