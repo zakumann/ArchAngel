@@ -29,6 +29,8 @@ APlayerCharacter::APlayerCharacter()
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom);
+    FollowCamera->SetRelativeLocation(FVector(0, 70, 80));
+    FollowCamera->bUsePawnControlRotation = false;
 
     bUseControllerRotationYaw = true;
 
