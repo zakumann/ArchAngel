@@ -26,6 +26,18 @@ class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 	bool bIsAccelerating;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+	bool bIsWalking = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+	bool bIsRunning = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+	float WalkSpeedThreshold = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+	float RunSpeedThreshold = 600.f;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 	class APawn* Pawn;
 

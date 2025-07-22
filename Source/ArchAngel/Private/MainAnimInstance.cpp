@@ -21,32 +21,23 @@ void UMainAnimInstance::NativeInitializeAnimation()
 
 void UMainAnimInstance::UpdateAnimationProperties()
 {
-    if(Pawn == nullptr)
+    if (!Pawn)
     {
         Pawn = TryGetPawnOwner();
+        PlayerCharacter = Pawn ? Cast<APlayerCharacter>(Pawn) : nullptr;
     }
 
-    if(Pawn)
+    if (Pawn)
     {
-        FVector Speed = Pawn->GetVelocity();
-        FVector LateralSpeed = FVector(Speed.X, Speed.Y, 0.f);
-        MovementSpeed = LateralSpeed.Size();
+        const FVector Velocity = Pawn->GetVelocity();
+        const FVector Lateral = FVector(Velocity.X, Velocity.Y, 0.f);
+        MovementSpeed = Lateral.Size();
 
-        if(PlayerCharacter == nullptr)
-        {
-            PlayerCharacter = Cast<APlayerCharacter>(Pawn);
-        }
+        bIsAccelerating = PlayerCharacter && PlayerCharacter->GetCharacterMovement()
+            ->GetCurrentAcceleration().Size() > 0.f;
 
-        if(PlayerCharacter)
-        {
-            if(PlayerCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0)
-            {
-                bIsAccelerating = true;
-            }
-            else
-            {
-                bIsAccelerating = false;
-            }
-        }
+        // New: set walk and run flags
+        bIsWalking = MovementSpeed > WalkSpeedThreshold && MovementSpeed < RunSpeedThreshold;
+        bIsRunning = MovementSpeed >= RunSpeedThreshold;
     }
 }
