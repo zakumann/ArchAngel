@@ -3,41 +3,45 @@
 
 #include "MainAnimInstance.h"
 #include "PlayerCharacter.h"
-#include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
-    if(Pawn == nullptr)
-    {
-        Pawn = TryGetPawnOwner();
-        if(Pawn)
-        {
-            PlayerCharacter = Cast<APlayerCharacter>(Pawn);
-        }
-    }
+
+    Pawn = TryGetPawnOwner();
+    PlayerCharacter = Pawn ? Cast<APlayerCharacter>(Pawn) : nullptr;
 }
 
-void UMainAnimInstance::UpdateAnimationProperties()
+void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+    Super::NativeUpdateAnimation(DeltaSeconds);
+
     if (!Pawn)
     {
         Pawn = TryGetPawnOwner();
         PlayerCharacter = Pawn ? Cast<APlayerCharacter>(Pawn) : nullptr;
     }
 
-    if (Pawn)
+    UpdateAnimationProperties();
+}
+
+void UMainAnimInstance::UpdateAnimationProperties()
+{
+    if (!Pawn) return;
+
+    const FVector Velocity = Pawn->GetVelocity();
+    MovementSpeed = FVector(Velocity.X, Velocity.Y, 0.f).Size();
+
+    if (PlayerCharacter)
     {
-        const FVector Velocity = Pawn->GetVelocity();
-        const FVector Lateral = FVector(Velocity.X, Velocity.Y, 0.f);
-        MovementSpeed = Lateral.Size();
+        const FVector Accel = PlayerCharacter->GetCharacterMovement()->GetCurrentAcceleration();
+        bIsAccelerating = Accel.Size() > 0.f;
 
-        bIsAccelerating = PlayerCharacter && PlayerCharacter->GetCharacterMovement()
-            ->GetCurrentAcceleration().Size() > 0.f;
-
-        // New: set walk and run flags
         bIsWalking = MovementSpeed > WalkSpeedThreshold && MovementSpeed < RunSpeedThreshold;
         bIsRunning = MovementSpeed >= RunSpeedThreshold;
+        bIsSprinting = PlayerCharacter->bIsSprinting;
+
+        bHasWeapon = (PlayerCharacter->CurrentWeapon != nullptr);
     }
 }

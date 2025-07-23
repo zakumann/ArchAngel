@@ -32,6 +32,7 @@ protected:
 	void StartSprint();
 	void StopSprint();
 	void Interact();
+	void ReloadWeapon();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -64,8 +65,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
     class UInputAction* InteractAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	class UInputAction* ReloadAction;
+
 	bool bIsAiming = false;
-    bool bIsSprinting = false;
 
 	/** Movement Speed */
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
@@ -81,4 +84,19 @@ protected:
     float DefaultFOV = 90.f;
     float AimFOV = 65.f;
 
+public:
+	// Equipped weapon & nearby pickup
+    UPROPERTY()
+	class AWeapon* CurrentWeapon = nullptr;
+	
+    UPROPERTY()
+	class AWeaponPickup* NearbyPickup = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
+    bool bIsSprinting = false;
+
+public:
+	// Called by the pickup actor
+    void NotifyNearbyPickup(AWeaponPickup* PU) { NearbyPickup = PU; }
+    void GiveWeapon(TSubclassOf<AWeapon> WeaponClass);
 };

@@ -11,6 +11,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractInterface.h"
 #include "DrawDebugHelpers.h"
+#include "Weapon.h"
+#include "Weapon/WeaponPickup.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -165,8 +167,45 @@ void APlayerCharacter::Interact()
 
     // debug line
     DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.f);
+
+    if (NearbyPickup)
+    {
+        NearbyPickup->GrantPickup(this);
+        NearbyPickup = nullptr;
+    }
+}
+
+void APlayerCharacter::ReloadWeapon()
+{
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->Reload();
+    }
+}
+
+void APlayerCharacter::GiveWeapon(TSubclassOf<AWeapon> WeaponClass)
+{
+    if (CurrentWeapon)
+    {
+        // Destroy or drop current weapon
+        CurrentWeapon->Destroy();
+    }
+
+    if (WeaponClass)
+    {
+        CurrentWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass);
+        if (CurrentWeapon && GetMesh())
+        {
+            CurrentWeapon->AttachToComponent(
+                GetMesh(),
+                FAttachmentTransformRules::SnapToTargetIncludingScale,
+                TEXT("WeaponSocket")
+            );
+        }
+    }
 }
 
 void APlayerCharacter::Fire()
 {
+    if (CurrentWeapon) CurrentWeapon->Fire();
 }

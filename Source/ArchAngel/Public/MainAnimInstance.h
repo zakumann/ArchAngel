@@ -16,15 +16,16 @@ class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
 	
 	public:
 	virtual void NativeInitializeAnimation() override;
+    virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	UFUNCTION(BlueprintCallable, Category = AnimationProperties)
 	void UpdateAnimationProperties();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	float MovementSpeed;
+	float MovementSpeed = 0.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool bIsAccelerating;
+	bool bIsAccelerating = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	bool bIsWalking = false;
@@ -32,15 +33,22 @@ class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	bool bIsRunning = false;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Movement)
+    bool bIsSprinting = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	bool bHasWeapon = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	float WalkSpeedThreshold = 200.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	float RunSpeedThreshold = 600.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	class APawn* Pawn;
+	UPROPERTY()
+    APawn* Pawn = nullptr;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadonly, Category = Movement)
-	class APlayerCharacter* PlayerCharacter;
+
+	UPROPERTY()
+    class APlayerCharacter* PlayerCharacter = nullptr;
 };
