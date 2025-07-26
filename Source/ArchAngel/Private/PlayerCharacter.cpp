@@ -9,10 +9,10 @@
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "InteractInterface.h"
 #include "DrawDebugHelpers.h"
 #include "Weapon.h"
-#include "Weapon/WeaponPickup.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -78,6 +78,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleSlowMo);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
+
+        //Crouch
+        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::StartCrouch);
+        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopCrouch);
 
         //Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
@@ -167,12 +171,6 @@ void APlayerCharacter::Interact()
 
     // debug line
     DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.f);
-
-    if (NearbyPickup)
-    {
-        NearbyPickup->GrantPickup(this);
-        NearbyPickup = nullptr;
-    }
 }
 
 void APlayerCharacter::ReloadWeapon()
@@ -183,23 +181,39 @@ void APlayerCharacter::ReloadWeapon()
     }
 }
 
+void APlayerCharacter::StartCrouch()
+{
+    Crouch(); // Shrinks capsule automatically
+    bIsCrouching = true;
+}
+
+void APlayerCharacter::StopCrouch()
+{
+    UnCrouch();
+    bIsCrouching = false;
+}
+
 void APlayerCharacter::GiveWeapon(TSubclassOf<AWeapon> WeaponClass)
 {
     if (CurrentWeapon)
     {
-        // Destroy or drop current weapon
         CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
     }
 
     if (WeaponClass)
     {
-        CurrentWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass);
+        FActorSpawnParameters Params;
+        Params.Owner = this;
+        Params.Instigator = GetInstigator();
+
+        CurrentWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, Params);
         if (CurrentWeapon && GetMesh())
         {
             CurrentWeapon->AttachToComponent(
                 GetMesh(),
                 FAttachmentTransformRules::SnapToTargetIncludingScale,
-                TEXT("WeaponSocket")
+                WeaponSocketName
             );
         }
     }

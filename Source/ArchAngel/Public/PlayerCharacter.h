@@ -14,6 +14,13 @@ class ARCHANGEL_API APlayerCharacter : public ACharacter
 
 public:
 	APlayerCharacter();
+
+	UPROPERTY(BlueprintReadOnly, Category="Weapon")
+    class AWeapon* CurrentWeapon = nullptr;
+
+    /** Socket name on the character's skeletal mesh */
+    UPROPERTY(EditDefaultsOnly, Category="Weapon")
+    class FName WeaponSocketName = TEXT("WeaponSocket");
 	
 protected:
 	// Called when the game starts or when spawned
@@ -33,6 +40,8 @@ protected:
 	void StopSprint();
 	void Interact();
 	void ReloadWeapon();
+	void StartCrouch();
+	void StopCrouch();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -60,6 +69,9 @@ protected:
 	class UInputAction* FireAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* CrouchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SlowAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -84,19 +96,14 @@ protected:
     float DefaultFOV = 90.f;
     float AimFOV = 65.f;
 
-public:
-	// Equipped weapon & nearby pickup
-    UPROPERTY()
-	class AWeapon* CurrentWeapon = nullptr;
-	
-    UPROPERTY()
-	class AWeaponPickup* NearbyPickup = nullptr;
-	
+public:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
     bool bIsSprinting = false;
 
+	UPROPERTY(BlueprintReadWrite, Category = "Movement")
+	bool bIsCrouching = false;
+
 public:
 	// Called by the pickup actor
-    void NotifyNearbyPickup(AWeaponPickup* PU) { NearbyPickup = PU; }
     void GiveWeapon(TSubclassOf<AWeapon> WeaponClass);
 };

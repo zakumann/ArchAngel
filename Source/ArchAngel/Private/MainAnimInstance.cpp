@@ -30,18 +30,15 @@ void UMainAnimInstance::UpdateAnimationProperties()
 {
     if (!Pawn) return;
 
-    const FVector Velocity = Pawn->GetVelocity();
-    MovementSpeed = FVector(Velocity.X, Velocity.Y, 0.f).Size();
+    MovementSpeed = FVector(Pawn->GetVelocity().X, Pawn->GetVelocity().Y, 0.f).Size();
 
-    if (PlayerCharacter)
+    if (APlayerCharacter* PC = Cast<APlayerCharacter>(Pawn))
     {
-        const FVector Accel = PlayerCharacter->GetCharacterMovement()->GetCurrentAcceleration();
-        bIsAccelerating = Accel.Size() > 0.f;
-
+        bIsCrouching = PC->bIsCrouching;
+        bIsSprinting = PC->bIsSprinting;
+        bHasWeapon = (PC->CurrentWeapon != nullptr);
         bIsWalking = MovementSpeed > WalkSpeedThreshold && MovementSpeed < RunSpeedThreshold;
         bIsRunning = MovementSpeed >= RunSpeedThreshold;
-        bIsSprinting = PlayerCharacter->bIsSprinting;
-
-        bHasWeapon = (PlayerCharacter->CurrentWeapon != nullptr);
+        bIsAccelerating = PC->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
     }
 }
