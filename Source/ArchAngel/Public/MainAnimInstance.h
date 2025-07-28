@@ -13,45 +13,16 @@ UCLASS()
 class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-	
-	public:
+public:
 	virtual void NativeInitializeAnimation() override;
-    virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeUpdateAnimation(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable, Category = AnimationProperties)
-	void UpdateAnimationProperties();
+	UPROPERTY(BlueprintReadOnly)
+	class APlayerCharacter* PlayerCharacter;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	float MovementSpeed = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	class UCharacterMovementComponent* PlayerCharacterMovement;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool bIsAccelerating = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
-	bool bIsWalking = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
-	bool bIsRunning = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Movement)
-    bool bIsSprinting = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool bIsCrouching = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
-	bool bHasWeapon = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
-	float WalkSpeedThreshold = 200.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
-	float RunSpeedThreshold = 600.f;
-
-	UPROPERTY()
-    APawn* Pawn = nullptr;
-
-
-	UPROPERTY()
-    class APlayerCharacter* PlayerCharacter = nullptr;
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float GroundSpeed;
 };
