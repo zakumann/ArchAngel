@@ -25,4 +25,10 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float GroundSpeed;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool bIsSprinting;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
+	float SprintSpeed = 600.0f;
 };

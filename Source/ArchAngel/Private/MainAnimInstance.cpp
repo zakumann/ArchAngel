@@ -24,5 +24,11 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	if (PlayerCharacterMovement)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
+		bIsSprinting = GroundSpeed >= SprintSpeed;
+	}
+	else
+	{
+		GroundSpeed = 0.0f;
+		bIsSprinting = false;
 	}
 }
