@@ -29,6 +29,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool bIsSprinting;
 
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool bIsFalling;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 	float SprintSpeed = 600.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool bIsCrouching;
 };

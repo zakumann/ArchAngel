@@ -25,10 +25,13 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
 		bIsSprinting = GroundSpeed >= SprintSpeed;
+		bIsFalling = PlayerCharacterMovement->IsFalling();
+		bIsCrouching = PlayerCharacterMovement->IsCrouching();
 	}
 	else
 	{
 		GroundSpeed = 0.0f;
 		bIsSprinting = false;
+		bIsCrouching = false;
 	}
 }
