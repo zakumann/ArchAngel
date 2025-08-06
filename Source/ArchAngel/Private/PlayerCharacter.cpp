@@ -20,21 +20,21 @@ APlayerCharacter::APlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+    bUseControllerRotationYaw = false;
+    bUseControllerRotationPitch = false;
+    bUseControllerRotationRoll = false;
+
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
+    CameraBoom->SetupAttachment(GetRootComponent());
     CameraBoom->TargetArmLength = 100.f;
-    CameraBoom->bUsePawnControlRotation = true;
-    CameraBoom->bEnableCameraLag = true;
-    CameraBoom->CameraLagSpeed = 20.f;
-    CameraBoom->bEnableCameraRotationLag = true;
-    CameraBoom->CameraRotationLagSpeed = 20.f;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom);
-    FollowCamera->SetRelativeLocation(FVector(0, 70, 80));
-    FollowCamera->bUsePawnControlRotation = false;
+    FollowCamera->SetRelativeLocation(FVector(0, 30, 80));
 
-    bUseControllerRotationYaw = true;
 
     AimArmLength = CameraBoom->TargetArmLength;
     TargetAimArmLength = AimArmLength;
@@ -64,7 +64,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     // Cast to EnhancedInputComponent
     if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
-        EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+        EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveForward);
+        EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveRight);
 
         // Bind the look input action
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
@@ -100,13 +101,30 @@ void APlayerCharacter::Tick(float DeltaTime)
     FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
 }
 
-void APlayerCharacter::Move(const FInputActionValue& Value)
+void APlayerCharacter::MoveForward(const FInputActionValue& Value)
 {
     FVector2D MovementVector = Value.Get<FVector2D>();
 
-    // Add movement input along the forward and right vectors
-    AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-    AddMovementInput(GetActorRightVector(), MovementVector.X);
+    // Add movement input along the forward.
+    const FRotator ControlRotation = GetControlRotation();
+    const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
+
+    const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+    AddMovementInput(Direction, MovementVector.Y);
+}
+
+void APlayerCharacter::MoveRight(const FInputActionValue& Value)
+{
+    FVector2D MovementVector = Value.Get<FVector2D>();
+
+    // Add movement input along the right.
+    const FRotator ControlRotation = GetControlRotation();
+    const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
+
+    const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+    AddMovementInput(Direction, MovementVector.X);
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)

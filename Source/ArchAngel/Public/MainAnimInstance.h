@@ -17,24 +17,25 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 
+protected:
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerCharacter* PlayerCharacter;
 
 	UPROPERTY(BlueprintReadOnly)
 	class UCharacterMovementComponent* PlayerCharacterMovement;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
-	float GroundSpeed;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	float GroundSpeed = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
-	bool bIsSprinting;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsSprinting = false;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
-	bool bIsFalling;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsFalling = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsCrouching = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement")
 	float SprintSpeed = 600.0f;
-
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
-	bool bIsCrouching;
 };

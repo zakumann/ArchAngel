@@ -4,7 +4,7 @@
 #include "MainAnimInstance.h"
 #include "PlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/KismetMathLibrary.h"
+#include <Kismet/KismetMathLibrary.h>
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -24,14 +24,17 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	if (PlayerCharacterMovement)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
+
 		bIsSprinting = GroundSpeed >= SprintSpeed;
 		bIsFalling = PlayerCharacterMovement->IsFalling();
 		bIsCrouching = PlayerCharacterMovement->IsCrouching();
 	}
 	else
 	{
+
 		GroundSpeed = 0.0f;
 		bIsSprinting = false;
+		bIsFalling = false;
 		bIsCrouching = false;
 	}
 }
