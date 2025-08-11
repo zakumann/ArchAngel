@@ -25,16 +25,19 @@ APlayerCharacter::APlayerCharacter()
     bUseControllerRotationRoll = false;
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(GetRootComponent());
     CameraBoom->TargetArmLength = 100.f;
+    CameraBoom->bUsePawnControlRotation = true;
+
+    // This is the important part: socket offset for side + height
+    CameraBoom->SocketOffset = FVector(0.0f, 30.0f, 80.0f);
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom);
-    FollowCamera->SetRelativeLocation(FVector(0, 30, 80));
-
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
 
     AimArmLength = CameraBoom->TargetArmLength;
     TargetAimArmLength = AimArmLength;
@@ -92,13 +95,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    AimArmLength = FMath::FInterpTo(AimArmLength, TargetAimArmLength, DeltaTime, AimInterpSpeed);
-    CameraBoom->TargetArmLength = AimArmLength;
-
-    float CurrentFOV = FollowCamera->FieldOfView;
-    float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
-    FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
+    UpdateAim(DeltaTime);
 }
 
 void APlayerCharacter::MoveForward(const FInputActionValue& Value)
@@ -116,7 +113,7 @@ void APlayerCharacter::MoveForward(const FInputActionValue& Value)
 
 void APlayerCharacter::MoveRight(const FInputActionValue& Value)
 {
-    FVector2D MovementVector = Value.Get<FVector2D>();
+     FVector2D MovementVector = Value.Get<FVector2D>();
 
     // Add movement input along the right.
     const FRotator ControlRotation = GetControlRotation();
@@ -240,4 +237,14 @@ void APlayerCharacter::GiveWeapon(TSubclassOf<AWeapon> WeaponClass)
 void APlayerCharacter::Fire()
 {
     if (CurrentWeapon) CurrentWeapon->Fire();
+}
+
+void APlayerCharacter::UpdateAim(float DeltaTime)
+{
+    AimArmLength = FMath::FInterpTo(AimArmLength, TargetAimArmLength, DeltaTime, AimInterpSpeed);
+    CameraBoom->TargetArmLength = AimArmLength;
+
+    float CurrentFOV = FollowCamera->FieldOfView;
+    float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
 }

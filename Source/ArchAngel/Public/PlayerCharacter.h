@@ -100,6 +100,8 @@ protected:
     float DefaultFOV = 90.f;
     float AimFOV = 65.f;
 
+	void UpdateAim(float DeltaSeconds);
+
 public:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
     bool bIsSprinting = false;
