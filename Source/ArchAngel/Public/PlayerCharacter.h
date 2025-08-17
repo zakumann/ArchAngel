@@ -14,13 +14,6 @@ class ARCHANGEL_API APlayerCharacter : public ACharacter
 
 public:
 	APlayerCharacter();
-
-	UPROPERTY(BlueprintReadOnly, Category="Weapon")
-    class AWeapon* CurrentWeapon = nullptr;
-
-    /** Socket name on the character's skeletal mesh */
-    UPROPERTY(EditDefaultsOnly, Category="Weapon")
-    class FName WeaponSocketName = TEXT("WeaponSocket");
 	
 protected:
 	// Called when the game starts or when spawned
@@ -41,8 +34,8 @@ protected:
 	void StopSprint();
 	void Interact();
 	void ReloadWeapon();
-	void StartCrouch();
-	void StopCrouch();
+	void HandleCrouchToggle();
+	void RotateCharacterToCursor(float DeltaTime);
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -109,7 +102,4 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Movement")
 	bool bIsCrouching = false;
 
-public:
-	// Called by the pickup actor
-    void GiveWeapon(TSubclassOf<AWeapon> WeaponClass);
 };

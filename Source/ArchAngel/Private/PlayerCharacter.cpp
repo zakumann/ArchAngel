@@ -11,8 +11,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "InteractInterface.h"
+#include "TimerManager.h"
 #include "DrawDebugHelpers.h"
-#include "Weapon.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -30,7 +30,7 @@ APlayerCharacter::APlayerCharacter()
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(GetRootComponent());
     CameraBoom->TargetArmLength = 100.f;
-    CameraBoom->bUsePawnControlRotation = true;
+    CameraBoom->bUsePawnControlRotation = false;
 
     // This is the important part: socket offset for side + height
     CameraBoom->SocketOffset = FVector(0.0f, 30.0f, 80.0f);
@@ -84,8 +84,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
 
         //Crouch
-        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::StartCrouch);
-        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopCrouch);
+        EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::HandleCrouchToggle);
 
         //Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
@@ -96,6 +95,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateAim(DeltaTime);
+    RotateCharacterToCursor(DeltaTime);
 }
 
 void APlayerCharacter::MoveForward(const FInputActionValue& Value)
@@ -109,11 +109,12 @@ void APlayerCharacter::MoveForward(const FInputActionValue& Value)
     const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
     AddMovementInput(Direction, MovementVector.Y);
+   
 }
 
 void APlayerCharacter::MoveRight(const FInputActionValue& Value)
 {
-     FVector2D MovementVector = Value.Get<FVector2D>();
+    FVector2D MovementVector = Value.Get<FVector2D>();
 
     // Add movement input along the right.
     const FRotator ControlRotation = GetControlRotation();
@@ -139,11 +140,19 @@ void APlayerCharacter::StartAiming()
     // Cancel sprint when aiming
     bIsSprinting = false;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+
+    // Lock facing direction to camera, but still allow strafing
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+    bUseControllerRotationYaw = true;
 }
 void APlayerCharacter::StopAiming()
 {
     bIsAiming = false;
     CameraBoom->TargetArmLength = 100.f;
+
+    // Back to movement-based rotation
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    bUseControllerRotationYaw = false;
 }
 
 void APlayerCharacter::ToggleSlowMo()
@@ -156,6 +165,11 @@ void APlayerCharacter::StartSprint()
 {
     if (!bIsAiming)
     {
+        if (bIsCrouched)
+        {
+            UnCrouch();
+            bIsCrouching = false;
+        }
         bIsSprinting = true;
         GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
     }
@@ -190,53 +204,52 @@ void APlayerCharacter::Interact()
 
 void APlayerCharacter::ReloadWeapon()
 {
-    if (CurrentWeapon)
+
+}
+
+void APlayerCharacter::HandleCrouchToggle()
+{
+    if (bIsCrouching)
     {
-        CurrentWeapon->Reload();
+        // Already crouching → stand up
+        UnCrouch();
+        bIsCrouching = false;
+
+        // Restore normal walk speed
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    }
+    else
+    {
+        // Not crouching → crouch down
+        Crouch();
+        bIsCrouching = true;
+
+        // Optional: reduce speed while crouching
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    }
+
+    // Cancel sprint if crouching
+    if (bIsCrouching && bIsSprinting)
+    {
+        bIsSprinting = false;
     }
 }
 
-void APlayerCharacter::StartCrouch()
+void APlayerCharacter::RotateCharacterToCursor(float DeltaTime)
 {
-    Crouch(); // Shrinks capsule automatically
-    bIsCrouching = true;
-}
+    if (!bIsAiming) return;
 
-void APlayerCharacter::StopCrouch()
-{
-    UnCrouch();
-    bIsCrouching = false;
-}
+    FRotator ControlRot = GetControlRotation();
+    ControlRot.Pitch = 0.f; // Ignore pitch so character stays upright
+    ControlRot.Roll = 0.f;
 
-void APlayerCharacter::GiveWeapon(TSubclassOf<AWeapon> WeaponClass)
-{
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
-
-    if (WeaponClass)
-    {
-        FActorSpawnParameters Params;
-        Params.Owner = this;
-        Params.Instigator = GetInstigator();
-
-        CurrentWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, Params);
-        if (CurrentWeapon && GetMesh())
-        {
-            CurrentWeapon->AttachToComponent(
-                GetMesh(),
-                FAttachmentTransformRules::SnapToTargetIncludingScale,
-                WeaponSocketName
-            );
-        }
-    }
+    // Smooth rotation toward camera yaw
+    FRotator NewRot = FMath::RInterpTo(GetActorRotation(), ControlRot, DeltaTime, 15.f);
+    SetActorRotation(NewRot);
 }
 
 void APlayerCharacter::Fire()
 {
-    if (CurrentWeapon) CurrentWeapon->Fire();
 }
 
 void APlayerCharacter::UpdateAim(float DeltaTime)
