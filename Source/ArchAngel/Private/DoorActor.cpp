@@ -1,100 +1,92 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "DoorActor.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/Character.h"
+#include "Components/StaticMeshComponent.h"
+#include "PlayerCharacter.h"
+#include "TimerManager.h"
 
-// Sets default values
 ADoorActor::ADoorActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Frame = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Frame"));
-    RootComponent = Frame;
+	DoorFrameMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorFrameMesh"));
+	SetRootComponent(DoorFrameMesh);
 
-    Door = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door"));
-    Door->SetupAttachment(Frame);
-    Door->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    Door->SetCollisionObjectType(ECC_WorldStatic);
-    Door->SetCollisionResponseToAllChannels(ECR_Block);
-    Door->SetGenerateOverlapEvents(false);
+	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
+	DoorMesh->SetupAttachment(DoorFrameMesh);
 
-    ProximityBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ProximityBox"));
-    ProximityBox->InitBoxExtent(FVector(150.f, 55.f, 106.f));
-    ProximityBox->SetupAttachment(Frame);
-    ProximityBox->SetRelativeLocation(FVector(0.f, 0.f, 106.f));
-
-    TimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComp"));
+	TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
+	TriggerBox->SetupAttachment(RootComponent);
+	TriggerBox->SetBoxExtent(FVector(100.f, 100.f, 200.f));
+	TriggerBox->SetCollisionProfileName("Trigger");
 }
 
-// Called when the game starts or when spawned
 void ADoorActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (DoorCurve)
-    {
-        FOnTimelineFloat Callback;
-        Callback.BindDynamic(this, &ADoorActor::HandleProgress);
-        TimelineComp->AddInterpFloat(DoorCurve, Callback);
-        TimelineComp->SetLooping(false);
-        TimelineComp->SetIgnoreTimeDilation(true);
-    }
 
-    ProximityBox->OnComponentBeginOverlap.AddDynamic(this, &ADoorActor::OnProximityBegin);
-    ProximityBox->OnComponentEndOverlap.AddDynamic(this, &ADoorActor::OnProximityEnd);
+	ClosedRotation = DoorMesh->GetRelativeRotation();
+
+	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ADoorActor::OnOverlapBegin);
+	TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ADoorActor::OnOverlapEnd);
 }
 
-void ADoorActor::HandleProgress(float Value)
-{
-	float Yaw = Value * -90.f * OpenDirectionFactor;
-    Door->SetRelativeRotation(FRotator(0.f, Yaw, 0.f));
-}
-
-// Called every frame
 void ADoorActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-    TimelineComp->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, nullptr);
+
+	FRotator CurrentRot = DoorMesh->GetRelativeRotation();
+	FRotator NewRot = FMath::RInterpTo(CurrentRot, bIsOpen ? TargetOpenRotation : ClosedRotation, DeltaTime, OpenSpeed);
+	DoorMesh->SetRelativeRotation(NewRot);
 }
 
-void ADoorActor::OnInteract_Implementation(AActor *Interactor)
+void ADoorActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!bPlayerInRange || !Interactor) return;
-
-    if (!bIsOpen)
-    {
-        // Determine opening direction only when opening
-        FVector ToPlayer = Interactor->GetActorLocation() - GetActorLocation();
-        FVector Forward = Frame->GetForwardVector();
-        OpenDirectionFactor = (FVector::DotProduct(Forward, ToPlayer) > 0.f) ? 1.f : -1.f;
-
-        TimelineComp->PlayFromStart();
-        bIsOpen = true;
-    }
-    else
-    {
-        // Reuse the same OpenDirectionFactor when closing
-        TimelineComp->Reverse();
-        bIsOpen = false;
-    }
+	if (APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor))
+	{
+		OpenDoor(Player);
+		GetWorldTimerManager().ClearTimer(CloseTimerHandle);
+	}
 }
 
-void ADoorActor::OnProximityBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ADoorActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-    if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
-    {
-        bPlayerInRange = true;
-    }
+	if (APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor))
+	{
+		// 일정 시간 뒤에 자동 닫힘
+		GetWorldTimerManager().SetTimer(CloseTimerHandle, this, &ADoorActor::CloseDoor, 2.f, false);
+	}
 }
 
-void ADoorActor::OnProximityEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ADoorActor::OpenDoor(AActor* PlayerActor)
 {
-    if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
-    {
-        bPlayerInRange = false;
-    }
+	if (!PlayerActor) return;
+
+	// 플레이어와 문의 상대 위치 계산
+	FVector DoorLocation = DoorFrameMesh->GetComponentLocation();
+	FVector DoorForward = DoorFrameMesh->GetForwardVector(); // 문의 앞 방향
+	FVector PlayerLocation = PlayerActor->GetActorLocation();
+
+	// 플레이어 → 문 방향 벡터
+	FVector ToPlayer = (PlayerLocation - DoorLocation).GetSafeNormal();
+
+	// 앞/뒤 판별 : 문 Forward와 플레이어 위치 벡터의 내적
+	float Dot = FVector::DotProduct(DoorForward, ToPlayer);
+
+	if (Dot > 0)
+	{
+		// 플레이어가 문 앞쪽
+		TargetOpenRotation = ClosedRotation + FRotator(0.f, -OpenAngle, 0.f);
+	}
+	else
+	{
+		// 플레이어가 문 뒤쪽
+		TargetOpenRotation = ClosedRotation + FRotator(0.f, OpenAngle, 0.f);
+	}
+
+	bIsOpen = true;
+}
+
+void ADoorActor::CloseDoor()
+{
+	bIsOpen = false;
 }
