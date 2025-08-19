@@ -67,8 +67,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     // Cast to EnhancedInputComponent
     if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
-        EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveForward);
-        EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveRight);
+        EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
 
         // Bind the look input action
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
@@ -98,31 +97,17 @@ void APlayerCharacter::Tick(float DeltaTime)
     RotateCharacterToCursor(DeltaTime);
 }
 
-void APlayerCharacter::MoveForward(const FInputActionValue& Value)
+void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-    FVector2D MovementVector = Value.Get<FVector2D>();
+    const FVector2D MovementVector = Value.Get<FVector2D>();
 
-    // Add movement input along the forward.
-    const FRotator ControlRotation = GetControlRotation();
-    const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
+    const FRotator Rotation = Controller->GetControlRotation();
+    const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-    const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-    AddMovementInput(Direction, MovementVector.Y);
-   
-}
-
-void APlayerCharacter::MoveRight(const FInputActionValue& Value)
-{
-    FVector2D MovementVector = Value.Get<FVector2D>();
-
-    // Add movement input along the right.
-    const FRotator ControlRotation = GetControlRotation();
-    const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
-
-    const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-    AddMovementInput(Direction, MovementVector.X);
+    const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+    AddMovementInput(ForwardDirection, MovementVector.Y);
+    const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+    AddMovementInput(RightDirection, MovementVector.X);
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
