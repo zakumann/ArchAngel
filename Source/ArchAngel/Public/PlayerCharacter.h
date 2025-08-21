@@ -7,6 +7,14 @@
 #include "InputActionValue.h"
 #include "PlayerCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class ECoverState : uint8
+{
+	None,
+	Standing,
+	Crouching
+};
+
 UCLASS()
 class ARCHANGEL_API APlayerCharacter : public ACharacter
 {
@@ -14,7 +22,7 @@ class ARCHANGEL_API APlayerCharacter : public ACharacter
 
 public:
 	APlayerCharacter();
-	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -26,7 +34,7 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartAiming();
-    void StopAiming();
+	void StopAiming();
 	void Fire();
 	void ToggleSlowMo();
 	void StartSprint();
@@ -35,13 +43,26 @@ protected:
 	void ReloadWeapon();
 	void HandleCrouchToggle();
 	void RotateCharacterToCursor(float DeltaTime);
+	void UpdateAim(float DeltaSeconds);
+
+	/** COVER SYSTEM */
+	void EnterCover();
+	void ExitCover();
+	void MoveAlongCover(float Value);
+	void ToggleCover();
+	bool bIsInCover = false;
+	ECoverState CoverState = ECoverState::None;
+
+	FVector CurrentCoverForward;
+	FVector CurrentCoverRight;
+	FVector CoverLocation;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
-    class USpringArmComponent* CameraBoom;
+	class USpringArmComponent* CameraBoom;
 
-    UPROPERTY(VisibleAnywhere)
-    class UCameraComponent* FollowCamera;
+	UPROPERTY(VisibleAnywhere)
+	class UCameraComponent* FollowCamera;
 	// Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* InputMappingContext;
@@ -53,7 +74,7 @@ protected:
 	class UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* AimAction;
+	class UInputAction* AimAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SprintAction;
@@ -68,34 +89,36 @@ protected:
 	class UInputAction* SlowAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* InteractAction;
+	class UInputAction* InteractAction;
 
-	UPROPERTY(EditAnywhere, Category="Input")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* CoverAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	class UInputAction* ReloadAction;
 
 	bool bIsAiming = false;
 
 	/** Movement Speed */
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float WalkSpeed = 300.f;
+	float WalkSpeed = 300.f;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float SprintSpeed = 600.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float SprintSpeed = 600.f;
 
 	// Smooth aiming variables
-    float AimArmLength;
-    float TargetAimArmLength;
-    float AimInterpSpeed = 12.f;
-    float DefaultFOV = 90.f;
-    float AimFOV = 65.f;
+	float AimArmLength;
+	float TargetAimArmLength;
+	float AimInterpSpeed = 12.f;
+	float DefaultFOV = 90.f;
+	float AimFOV = 65.f;
 
-	void UpdateAim(float DeltaSeconds);
-
-public:	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
-    bool bIsSprinting = false;
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool bIsSprinting = false;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Movement")
 	bool bIsCrouching = false;
+
 
 };

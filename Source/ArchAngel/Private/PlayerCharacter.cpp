@@ -17,15 +17,15 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+    // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+    PrimaryActorTick.bCanEverTick = true;
 
     bUseControllerRotationYaw = false;
     bUseControllerRotationPitch = false;
     bUseControllerRotationRoll = false;
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(GetRootComponent());
@@ -46,7 +46,7 @@ APlayerCharacter::APlayerCharacter()
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -62,7 +62,7 @@ void APlayerCharacter::BeginPlay()
 // Called to bind functionality to input
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
 
     // Cast to EnhancedInputComponent
     if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -87,6 +87,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         //Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
+
+        // Cover toggle
+        EnhancedInputComponent->BindAction(CoverAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleCover);
     }
 }
 
@@ -101,13 +104,22 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 {
     const FVector2D MovementVector = Value.Get<FVector2D>();
 
-    const FRotator Rotation = Controller->GetControlRotation();
-    const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+    if (bIsInCover)
+    {
+        MoveAlongCover(MovementVector.X); // Only horizontal movement along cover
+    }
+    else
+    {
+        const FRotator Rotation = Controller->GetControlRotation();
+        const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-    const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-    AddMovementInput(ForwardDirection, MovementVector.Y);
-    const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-    AddMovementInput(RightDirection, MovementVector.X);
+        const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+        AddMovementInput(ForwardDirection, MovementVector.Y);
+        const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        AddMovementInput(RightDirection, MovementVector.X); 
+    }
+
+    
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
@@ -246,3 +258,86 @@ void APlayerCharacter::UpdateAim(float DeltaTime)
     float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
     FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
 }
+
+void APlayerCharacter::ToggleCover()
+{
+    if (bIsInCover)
+    {
+        ExitCover();
+    }
+    else
+    {
+        EnterCover();
+    }
+}
+
+void APlayerCharacter::EnterCover()
+{
+    FVector Start = GetActorLocation();
+    FVector Forward = GetActorForwardVector();
+    FVector End = Start + Forward * 150.f; // Check 150 units ahead for cover
+    FHitResult Hit;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+    {
+        if (Hit.bBlockingHit)
+        {
+            bIsInCover = true;
+
+            // Snap to cover
+            CoverLocation = Hit.ImpactPoint;
+            SetActorLocation(CoverLocation);
+
+            // Calculate cover orientation
+            CurrentCoverForward = -Hit.ImpactNormal; // Player faces away from cover
+            CurrentCoverForward.Z = 0.f;
+            CurrentCoverForward.Normalize();
+
+            CurrentCoverRight = FVector::CrossProduct(FVector::UpVector, CurrentCoverForward);
+
+            // Lock rotation
+            FRotator CoverRot = CurrentCoverForward.Rotation();
+            SetActorRotation(CoverRot);
+
+            // Stop sprint and crouch
+            bIsSprinting = false;
+            GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+            GetCharacterMovement()->bOrientRotationToMovement = false;
+            bUseControllerRotationYaw = true;
+        }
+    }
+}
+
+void APlayerCharacter::ExitCover()
+{
+    bIsInCover = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    bUseControllerRotationYaw = false;
+}
+
+void APlayerCharacter::MoveAlongCover(float Value)
+{
+    if (!bIsInCover || FMath::IsNearlyZero(Value)) return;
+
+    FVector DesiredMove = CurrentCoverRight * Value * WalkSpeed * GetWorld()->GetDeltaSeconds();
+    FVector NewLocation = GetActorLocation() + DesiredMove;
+
+    // Check for cover edge
+    FHitResult Hit;
+    FVector TraceStart = NewLocation + CurrentCoverForward * 50.f; // In front of player
+    FVector TraceEnd = TraceStart + CurrentCoverForward * 10.f; // Short distance
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (!GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, Params))
+    {
+        // No blocking hit in front → stop movement
+        return;
+    }
+
+    SetActorLocation(NewLocation);
+}
+
