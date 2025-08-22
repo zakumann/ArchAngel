@@ -87,9 +87,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         //Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
-
-        // Cover toggle
-        EnhancedInputComponent->BindAction(CoverAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleCover);
     }
 }
 
@@ -98,34 +95,19 @@ void APlayerCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     UpdateAim(DeltaTime);
     RotateCharacterToCursor(DeltaTime);
-
-    // Exit cover if aiming behind
-    if (bIsInCover && bIsAiming && IsAimingBehindCover())
-    {
-        ExitCover();
-    }
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
     const FVector2D MovementVector = Value.Get<FVector2D>();
 
-    if (bIsInCover)
-    {
-        MoveAlongCover(MovementVector.X); // Only horizontal movement along cover
-    }
-    else
-    {
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+    const FRotator Rotation = Controller->GetControlRotation();
+    const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-        const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        AddMovementInput(ForwardDirection, MovementVector.Y);
-        const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-        AddMovementInput(RightDirection, MovementVector.X); 
-    }
-
-    
+    const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+    AddMovementInput(ForwardDirection, MovementVector.Y);
+    const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+    AddMovementInput(RightDirection, MovementVector.X); 
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
@@ -263,107 +245,4 @@ void APlayerCharacter::UpdateAim(float DeltaTime)
     float CurrentFOV = FollowCamera->FieldOfView;
     float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
     FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
-}
-
-void APlayerCharacter::ToggleCover()
-{
-    if (bIsInCover)
-    {
-        ExitCover();
-    }
-    else
-    {
-        EnterCover();
-    }
-}
-
-void APlayerCharacter::EnterCover()
-{
-    FVector Start = GetActorLocation();
-    FVector Forward = GetActorForwardVector();
-    FVector End = Start + Forward * 150.f; // Check 150 units ahead for cover
-    FHitResult Hit;
-
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-
-    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
-    {
-        if (Hit.bBlockingHit)
-        {
-            bIsInCover = true;
-
-            // Snap to cover
-            CoverLocation = Hit.ImpactPoint;
-            SetActorLocation(CoverLocation);
-
-            // Calculate cover orientation
-            CurrentCoverForward = -Hit.ImpactNormal; // Player faces away from cover
-            CurrentCoverForward.Z = 0.f;
-            CurrentCoverForward.Normalize();
-
-            CurrentCoverRight = FVector::CrossProduct(FVector::UpVector, CurrentCoverForward);
-
-            // Lock rotation
-            FRotator CoverRot = CurrentCoverForward.Rotation();
-            SetActorRotation(CoverRot);
-
-            // Stop sprint and crouch
-            bIsSprinting = false;
-            GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-            GetCharacterMovement()->bOrientRotationToMovement = false;
-            bUseControllerRotationYaw = true;
-        }
-    }
-}
-
-void APlayerCharacter::ExitCover()
-{
-    bIsInCover = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    bUseControllerRotationYaw = false;
-}
-
-void APlayerCharacter::MoveAlongCover(float Value)
-{
-    if (!bIsInCover || FMath::IsNearlyZero(Value)) return;
-
-    FVector DesiredMove = CurrentCoverRight * Value * WalkSpeed * GetWorld()->GetDeltaSeconds();
-    FVector NewLocation = GetActorLocation() + DesiredMove;
-
-    // Check for cover edge
-    FHitResult Hit;
-    FVector TraceStart = NewLocation + CurrentCoverForward * 50.f; // In front of player
-    FVector TraceEnd = TraceStart + CurrentCoverForward * 10.f; // Short distance
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-
-    if (!GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, Params))
-    {
-        // No blocking hit in front → stop movement
-        return;
-    }
-
-    SetActorLocation(NewLocation);
-}
-
-bool APlayerCharacter::IsAimingBehindCover() const
-{
-    if (!bIsInCover) return false;
-
-    // Camera forward (flattened)
-    FVector CameraForward = FollowCamera->GetForwardVector();
-    CameraForward.Z = 0.f;
-    CameraForward.Normalize();
-
-    // Cover forward (flattened)
-    FVector CoverForwardFlat = CurrentCoverForward;
-    CoverForwardFlat.Z = 0.f;
-    CoverForwardFlat.Normalize();
-
-    // Dot product: 1 = same direction, -1 = opposite
-    float Dot = FVector::DotProduct(CameraForward, CoverForwardFlat);
-
-    // If camera is facing behind cover (more than ~100° away)
-    return (Dot < -0.2f);
 }

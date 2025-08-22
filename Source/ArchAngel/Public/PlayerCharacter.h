@@ -7,14 +7,6 @@
 #include "InputActionValue.h"
 #include "PlayerCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class ECoverState : uint8
-{
-	None,
-	Standing,
-	Crouching
-};
-
 UCLASS()
 class ARCHANGEL_API APlayerCharacter : public ACharacter
 {
@@ -44,19 +36,6 @@ protected:
 	void HandleCrouchToggle();
 	void RotateCharacterToCursor(float DeltaTime);
 	void UpdateAim(float DeltaSeconds);
-
-	/** COVER SYSTEM */
-	void EnterCover();
-	void ExitCover();
-	void MoveAlongCover(float Value);
-	void ToggleCover();
-	bool bIsInCover = false;
-	bool IsAimingBehindCover() const;
-	ECoverState CoverState = ECoverState::None;
-
-	FVector CurrentCoverForward;
-	FVector CurrentCoverRight;
-	FVector CoverLocation;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -91,9 +70,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* InteractAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	class UInputAction* CoverAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	class UInputAction* ReloadAction;
