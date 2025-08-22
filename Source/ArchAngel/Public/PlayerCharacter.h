@@ -51,6 +51,7 @@ protected:
 	void MoveAlongCover(float Value);
 	void ToggleCover();
 	bool bIsInCover = false;
+	bool IsAimingBehindCover() const;
 	ECoverState CoverState = ECoverState::None;
 
 	FVector CurrentCoverForward;

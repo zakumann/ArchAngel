@@ -98,6 +98,12 @@ void APlayerCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     UpdateAim(DeltaTime);
     RotateCharacterToCursor(DeltaTime);
+
+    // Exit cover if aiming behind
+    if (bIsInCover && bIsAiming && IsAimingBehindCover())
+    {
+        ExitCover();
+    }
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
@@ -341,3 +347,23 @@ void APlayerCharacter::MoveAlongCover(float Value)
     SetActorLocation(NewLocation);
 }
 
+bool APlayerCharacter::IsAimingBehindCover() const
+{
+    if (!bIsInCover) return false;
+
+    // Camera forward (flattened)
+    FVector CameraForward = FollowCamera->GetForwardVector();
+    CameraForward.Z = 0.f;
+    CameraForward.Normalize();
+
+    // Cover forward (flattened)
+    FVector CoverForwardFlat = CurrentCoverForward;
+    CoverForwardFlat.Z = 0.f;
+    CoverForwardFlat.Normalize();
+
+    // Dot product: 1 = same direction, -1 = opposite
+    float Dot = FVector::DotProduct(CameraForward, CoverForwardFlat);
+
+    // If camera is facing behind cover (more than ~100° away)
+    return (Dot < -0.2f);
+}
