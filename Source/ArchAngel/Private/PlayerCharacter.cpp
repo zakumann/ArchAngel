@@ -264,13 +264,15 @@ void APlayerCharacter::Dodge()
     const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
     const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-    FVector DodgeDir = (Forward * CachedMoveInput.Y + Right * CachedMoveInput.X).GetSafeNormal();
+    FVector DodgeDir = (Forward * CachedMoveInput.Y + Right * CachedMoveInput.X);
 
     // Default forward if no input
     if (DodgeDir.IsNearlyZero())
     {
         DodgeDir = Forward;
     }
+
+    DodgeDir = DodgeDir.GetSafeNormal();
 
     // Launch
     LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
