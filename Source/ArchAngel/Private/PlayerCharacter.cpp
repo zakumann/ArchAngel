@@ -87,6 +87,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         //Interact
         EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
+
+        //Dodge
+        EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &APlayerCharacter::Dodge);
     }
 }
 
@@ -245,4 +248,53 @@ void APlayerCharacter::UpdateAim(float DeltaTime)
     float CurrentFOV = FollowCamera->FieldOfView;
     float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
     FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
+}
+
+void APlayerCharacter::Dodge()
+{
+    if (!bCanDodge) return;
+
+    // Get movement input direction
+    FVector DodgeDir = FVector::ZeroVector;
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+    {
+        const FRotator YawRot(0.f, PC->GetControlRotation().Yaw, 0.f);
+
+        FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+        FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+
+        // Use last movement input vector if available
+        FVector InputDir = GetLastMovementInputVector();
+        DodgeDir = (Forward * InputDir.Y + Right * InputDir.X).GetSafeNormal();
+    }
+
+    if (DodgeDir.IsNearlyZero())
+    {
+        // If no input → dodge forward
+        DodgeDir = GetActorForwardVector();
+    }
+    // Launch the character
+    LaunchCharacter(DodgeDir * DodgeStrength + FVector(0, 0, 200.f), true, true);
+
+    // Activate slow motion
+    UGameplayStatics::SetGlobalTimeDilation(this, 0.25f);
+
+    // Prevent spamming dodge
+    bCanDodge = false;
+    GetWorldTimerManager().SetTimerForNextTick([this]()
+        {
+            // restore normal time after short delay
+            GetWorldTimerManager().SetTimer(
+                FTimerHandle(),
+                [this]() { UGameplayStatics::SetGlobalTimeDilation(this, 1.0f); },
+                1.0f, false
+            );
+
+            // reset dodge cooldown
+            GetWorldTimerManager().SetTimer(
+                FTimerHandle(),
+                [this]() { bCanDodge = true; },
+                DodgeCooldown, false
+            );
+        });
 }

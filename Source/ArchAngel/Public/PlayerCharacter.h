@@ -36,6 +36,7 @@ protected:
 	void HandleCrouchToggle();
 	void RotateCharacterToCursor(float DeltaTime);
 	void UpdateAim(float DeltaSeconds);
+	void Dodge();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -74,6 +75,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	class UInputAction* ReloadAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* DodgeAction;
+
 	bool bIsAiming = false;
 
 	/** Movement Speed */
@@ -89,6 +93,15 @@ protected:
 	float AimInterpSpeed = 12.f;
 	float DefaultFOV = 90.f;
 	float AimFOV = 65.f;
+
+	// Dodge setting
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	float DodgeStrength = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	float DodgeCooldown = 1.0f;
+
+	bool bCanDodge = true;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
