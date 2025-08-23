@@ -68,6 +68,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
         EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+        EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &APlayerCharacter::OnMoveCompleted);
 
         // Bind the look input action
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
@@ -103,6 +104,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
     const FVector2D MovementVector = Value.Get<FVector2D>();
+
+    // 🔹 Save it here so Dodge() can read it later
+    CachedMoveInput = MovementVector;
 
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
@@ -254,47 +258,58 @@ void APlayerCharacter::Dodge()
 {
     if (!bCanDodge) return;
 
-    // Get movement input direction
-    FVector DodgeDir = FVector::ZeroVector;
-    if (APlayerController* PC = Cast<APlayerController>(Controller))
+    // Build forward/right from *mouse/camera yaw*
+    const FRotator ControlRot = Controller ? Controller->GetControlRotation() : GetActorRotation();
+    const FRotator YawRot(0.f, ControlRot.Yaw, 0.f);
+    const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+    const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+
+    // Decide a *cardinal* direction from cached input: W/S vs A/D
+    const float DeadZone = 0.25f;
+    FVector DodgeDir = Forward; // default forward if no input
+
+    const bool HasInput = (FMath::Abs(CachedMoveInput.X) >= DeadZone) || (FMath::Abs(CachedMoveInput.Y) >= DeadZone);
+    if (HasInput)
     {
-        const FRotator YawRot(0.f, PC->GetControlRotation().Yaw, 0.f);
-
-        FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-        FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-
-        // Use last movement input vector if available
-        FVector InputDir = GetLastMovementInputVector();
-        DodgeDir = (Forward * InputDir.Y + Right * InputDir.X).GetSafeNormal();
+        // Prefer the dominant axis so diagonals become a clean cardinal
+        if (FMath::Abs(CachedMoveInput.Y) >= FMath::Abs(CachedMoveInput.X))
+        {
+            // W/S
+            DodgeDir = (CachedMoveInput.Y >= 0.f) ? Forward : -Forward;
+        }
+        else
+        {
+            // D/A
+            DodgeDir = (CachedMoveInput.X >= 0.f) ? Right : -Right;
+        }
     }
 
-    if (DodgeDir.IsNearlyZero())
-    {
-        // If no input → dodge forward
-        DodgeDir = GetActorForwardVector();
-    }
-    // Launch the character
-    LaunchCharacter(DodgeDir * DodgeStrength + FVector(0, 0, 200.f), true, true);
+    // Launch (cardinal, camera-relative), optional slight upward pop
+    LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
 
-    // Activate slow motion
+    // Slow-mo on dodge
     UGameplayStatics::SetGlobalTimeDilation(this, 0.25f);
 
-    // Prevent spamming dodge
+    // Lockout + timers
     bCanDodge = false;
-    GetWorldTimerManager().SetTimerForNextTick([this]()
-        {
-            // restore normal time after short delay
-            GetWorldTimerManager().SetTimer(
-                FTimerHandle(),
-                [this]() { UGameplayStatics::SetGlobalTimeDilation(this, 1.0f); },
-                1.0f, false
-            );
 
-            // reset dodge cooldown
-            GetWorldTimerManager().SetTimer(
-                FTimerHandle(),
-                [this]() { bCanDodge = true; },
-                DodgeCooldown, false
-            );
-        });
+    // Restore time after SlowMoDuration (note: scaled by time dilation)
+    GetWorldTimerManager().SetTimer(
+        SlowMoTimerHandle,
+        [this]() { UGameplayStatics::SetGlobalTimeDilation(this, 1.0f); },
+        SlowMoDuration, false
+    );
+
+    // Cooldown
+    GetWorldTimerManager().SetTimer(
+        DodgeCooldownTimerHandle,
+        [this]() { bCanDodge = true; },
+        DodgeCooldown, false
+    );
+    UE_LOG(LogTemp, Warning, TEXT("CachedMoveInput X=%f Y=%f"), CachedMoveInput.X, CachedMoveInput.Y);
+}
+
+void APlayerCharacter::OnMoveCompleted(const FInputActionValue& Value)
+{
+    CachedMoveInput = FVector2D::ZeroVector;
 }

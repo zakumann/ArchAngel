@@ -37,6 +37,8 @@ protected:
 	void RotateCharacterToCursor(float DeltaTime);
 	void UpdateAim(float DeltaSeconds);
 	void Dodge();
+	// helper to clear cached input when Move finishes
+	void OnMoveCompleted(const FInputActionValue& Value);
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -101,7 +103,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	float DodgeCooldown = 1.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	float SlowMoDuration = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	float UpwardBoostZ = 200.f;
+
 	bool bCanDodge = true;
+	// cache last movement input from Move()
+	FVector2D CachedMoveInput = FVector2D::ZeroVector;
+
+	// Dodge timer
+	FTimerHandle SlowMoTimerHandle;
+	FTimerHandle DodgeCooldownTimerHandle;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
