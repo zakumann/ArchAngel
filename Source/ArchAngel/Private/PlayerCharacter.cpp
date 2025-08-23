@@ -264,48 +264,36 @@ void APlayerCharacter::Dodge()
     const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
     const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-    // Decide a *cardinal* direction from cached input: W/S vs A/D
-    const float DeadZone = 0.25f;
-    FVector DodgeDir = Forward; // default forward if no input
+    FVector DodgeDir = (Forward * CachedMoveInput.Y + Right * CachedMoveInput.X).GetSafeNormal();
 
-    const bool HasInput = (FMath::Abs(CachedMoveInput.X) >= DeadZone) || (FMath::Abs(CachedMoveInput.Y) >= DeadZone);
-    if (HasInput)
+    // Default forward if no input
+    if (DodgeDir.IsNearlyZero())
     {
-        // Prefer the dominant axis so diagonals become a clean cardinal
-        if (FMath::Abs(CachedMoveInput.Y) >= FMath::Abs(CachedMoveInput.X))
-        {
-            // W/S
-            DodgeDir = (CachedMoveInput.Y >= 0.f) ? Forward : -Forward;
-        }
-        else
-        {
-            // D/A
-            DodgeDir = (CachedMoveInput.X >= 0.f) ? Right : -Right;
-        }
+        DodgeDir = Forward;
     }
 
-    // Launch (cardinal, camera-relative), optional slight upward pop
+    // Launch
     LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
 
-    // Slow-mo on dodge
+    // Slow-mo
     UGameplayStatics::SetGlobalTimeDilation(this, 0.25f);
 
-    // Lockout + timers
+    // Lockout
     bCanDodge = false;
 
-    // Restore time after SlowMoDuration (note: scaled by time dilation)
+    // Timers
     GetWorldTimerManager().SetTimer(
         SlowMoTimerHandle,
         [this]() { UGameplayStatics::SetGlobalTimeDilation(this, 1.0f); },
         SlowMoDuration, false
     );
 
-    // Cooldown
     GetWorldTimerManager().SetTimer(
         DodgeCooldownTimerHandle,
         [this]() { bCanDodge = true; },
         DodgeCooldown, false
     );
+
     UE_LOG(LogTemp, Warning, TEXT("CachedMoveInput X=%f Y=%f"), CachedMoveInput.X, CachedMoveInput.Y);
 }
 
