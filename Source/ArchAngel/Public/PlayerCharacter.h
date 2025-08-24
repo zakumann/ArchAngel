@@ -24,6 +24,11 @@ protected:
 
 	// Movement and look functions
 	void Move(const FInputActionValue& Value);
+	void Dodge();
+	// helper to clear cached input when Move finishes
+	void OnMoveCompleted(const FInputActionValue& Value);
+
+	// Look, aim, sprint, etc.
 	void Look(const FInputActionValue& Value);
 	void StartAiming();
 	void StopAiming();
@@ -36,15 +41,12 @@ protected:
 	void HandleCrouchToggle();
 	void RotateCharacterToCursor(float DeltaTime);
 	void UpdateAim(float DeltaSeconds);
-	void Dodge();
-	// helper to clear cached input when Move finishes
-	void OnMoveCompleted(const FInputActionValue& Value);
 
-protected:
+	// ==== Camera ====
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* CameraBoom;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere) 
 	class UCameraComponent* FollowCamera;
 	// Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -80,13 +82,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* DodgeAction;
 
+	// ==== Movement ====
 	bool bIsAiming = false;
 
-	/** Movement Speed */
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float WalkSpeed = 300.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
+	float WalkSpeed = 300.f; 
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
 	float SprintSpeed = 600.f;
 
 	// Smooth aiming variables
@@ -104,18 +106,32 @@ protected:
 	float DodgeCooldown = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float SlowMoDuration = 1.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	float UpwardBoostZ = 200.f;
 
 	bool bCanDodge = true;
 	// cache last movement input from Move()
 	FVector2D CachedMoveInput = FVector2D::ZeroVector;
-
-	// Dodge timer
-	FTimerHandle SlowMoTimerHandle;
 	FTimerHandle DodgeCooldownTimerHandle;
+
+	// ==== Slow Motion Pool ====
+	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion") 
+	float SlowMoTotalTime = 3.0f; // 3s pool 
+
+	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion")
+	float SlowMoRechargeDelay = 5.0f; 
+
+	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion")
+	float SlowMoRechargeRate = 1.0f; // per sec 
+
+	float SlowMoRemaining; 
+	bool bIsInSlowMo = false;
+	FTimerHandle SlowMoTimerHandle;
+	FTimerHandle SlowMoRechargeHandle;
+
+	void StartSlowMo();
+	void StopSlowMo();
+
+	// === UMG Widget ===
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")

@@ -14,6 +14,7 @@
 #include "TimerManager.h"
 #include "DrawDebugHelpers.h"
 
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -57,6 +58,8 @@ void APlayerCharacter::BeginPlay()
     }
 
     DefaultFOV = FollowCamera->FieldOfView;
+    SlowMoRemaining = SlowMoTotalTime;
+
 }
 
 // Called to bind functionality to input
@@ -99,8 +102,10 @@ void APlayerCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     UpdateAim(DeltaTime);
     RotateCharacterToCursor(DeltaTime);
+
 }
 
+// ========== MOVEMENT ==========
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
     const FVector2D MovementVector = Value.Get<FVector2D>();
@@ -117,6 +122,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
     AddMovementInput(RightDirection, MovementVector.X); 
 }
 
+// ========== LOOK ==========
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
     FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -124,6 +130,7 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
     AddControllerPitchInput(LookAxisVector.Y);
 }
 
+// ========== AIM ==========
 void APlayerCharacter::StartAiming()
 {
     bIsAiming = true;
@@ -147,12 +154,49 @@ void APlayerCharacter::StopAiming()
     bUseControllerRotationYaw = false;
 }
 
+// ========== SLOW MOTION SYSTEM ==========
 void APlayerCharacter::ToggleSlowMo()
 {
-    float CurrentDilation = UGameplayStatics::GetGlobalTimeDilation(this);
-    UGameplayStatics::SetGlobalTimeDilation(this, (CurrentDilation < 1.f) ? 1.f : 0.25f);
+    if (bIsInSlowMo) 
+    {
+        StopSlowMo();
+    }
+    else {
+        StartSlowMo();
+    }
 }
 
+void APlayerCharacter::StartSlowMo()
+{
+    if (bIsInSlowMo || SlowMoRemaining <= 0.f) return;
+
+    UGameplayStatics::SetGlobalTimeDilation(this, 0.25f); 
+    bIsInSlowMo = true;
+
+    GetWorldTimerManager().SetTimer(SlowMoTimerHandle, [this]() { StopSlowMo(); }, SlowMoRemaining, false);
+}
+
+void APlayerCharacter::StopSlowMo()
+{
+    if (!bIsInSlowMo) return;
+
+    UGameplayStatics::SetGlobalTimeDilation(this, 1.0f);
+    bIsInSlowMo = false;
+    SlowMoRemaining = 0.f;
+
+    // recharge after delay
+    GetWorldTimerManager().SetTimer(SlowMoRechargeHandle, [this]()
+    {
+        GetWorldTimerManager().SetTimer(SlowMoRechargeHandle, [this]()
+        {
+            SlowMoRemaining = FMath::Min(SlowMoRemaining + SlowMoRechargeRate, SlowMoTotalTime);
+            if (SlowMoRemaining >= SlowMoTotalTime)
+                GetWorldTimerManager().ClearTimer(SlowMoRechargeHandle);
+        }, 1.f, true);
+    }, SlowMoRechargeDelay, false);
+}
+
+// ========== SPRINT ==========
 void APlayerCharacter::StartSprint()
 {
     if (!bIsAiming)
@@ -172,7 +216,7 @@ void APlayerCharacter::StopSprint()
     bIsSprinting = false;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
-
+// ========== INTERACT ==========
 void APlayerCharacter::Interact()
 {
     FVector Start = FollowCamera->GetComponentLocation();
@@ -194,11 +238,7 @@ void APlayerCharacter::Interact()
     DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.f);
 }
 
-void APlayerCharacter::ReloadWeapon()
-{
-
-}
-
+// ========== CROUCH ==========
 void APlayerCharacter::HandleCrouchToggle()
 {
     if (bIsCrouching)
@@ -240,10 +280,17 @@ void APlayerCharacter::RotateCharacterToCursor(float DeltaTime)
     SetActorRotation(NewRot);
 }
 
+// ========== FIRE / RELOAD ==========
 void APlayerCharacter::Fire()
 {
 }
 
+
+void APlayerCharacter::ReloadWeapon()
+{
+}
+
+// ========== AIM CAMERA ==========
 void APlayerCharacter::UpdateAim(float DeltaTime)
 {
     AimArmLength = FMath::FInterpTo(AimArmLength, TargetAimArmLength, DeltaTime, AimInterpSpeed);
@@ -253,7 +300,7 @@ void APlayerCharacter::UpdateAim(float DeltaTime)
     float DesiredFOV = bIsAiming ? AimFOV : DefaultFOV;
     FollowCamera->SetFieldOfView(FMath::FInterpTo(CurrentFOV, DesiredFOV, DeltaTime, AimInterpSpeed));
 }
-
+// ========== DODGE ==========
 void APlayerCharacter::Dodge()
 {
     if (!bCanDodge) return;
@@ -267,7 +314,7 @@ void APlayerCharacter::Dodge()
     FVector DodgeDir = (Forward * CachedMoveInput.Y + Right * CachedMoveInput.X);
 
     // Default forward if no input
-    if (DodgeDir.IsNearlyZero())
+    if (DodgeDir.IsNearlyZero()) 
     {
         DodgeDir = Forward;
     }
@@ -277,24 +324,11 @@ void APlayerCharacter::Dodge()
     // Launch
     LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
 
-    // Slow-mo
-    UGameplayStatics::SetGlobalTimeDilation(this, 0.25f);
+    StartSlowMo();
 
     // Lockout
     bCanDodge = false;
-
-    // Timers
-    GetWorldTimerManager().SetTimer(
-        SlowMoTimerHandle,
-        [this]() { UGameplayStatics::SetGlobalTimeDilation(this, 1.0f); },
-        SlowMoDuration, false
-    );
-
-    GetWorldTimerManager().SetTimer(
-        DodgeCooldownTimerHandle,
-        [this]() { bCanDodge = true; },
-        DodgeCooldown, false
-    );
+    GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]() { bCanDodge = true; }, DodgeCooldown, false);
 
     UE_LOG(LogTemp, Warning, TEXT("CachedMoveInput X=%f Y=%f"), CachedMoveInput.X, CachedMoveInput.Y);
 }
