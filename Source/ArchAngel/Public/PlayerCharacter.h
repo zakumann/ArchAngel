@@ -132,6 +132,11 @@ protected:
 	void StopSlowMo();
 
 	// === UMG Widget ===
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> SlowMoWidgetClass;
+
+	UPROPERTY()
+	class USlowMoWidget* SlowMoWidgetInstance;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")

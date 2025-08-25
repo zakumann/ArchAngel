@@ -13,6 +13,8 @@
 #include "InteractInterface.h"
 #include "TimerManager.h"
 #include "DrawDebugHelpers.h"
+#include "UMG/SlowMoWidget.h"
+
 
 
 // Sets default values
@@ -60,6 +62,18 @@ void APlayerCharacter::BeginPlay()
     DefaultFOV = FollowCamera->FieldOfView;
     SlowMoRemaining = SlowMoTotalTime;
 
+    if (SlowMoWidgetClass)
+    {
+        APlayerController* PC = Cast<APlayerController>(Controller);
+        if (PC)
+        {
+            SlowMoWidgetInstance = CreateWidget<USlowMoWidget>(PC, SlowMoWidgetClass);
+            if (SlowMoWidgetInstance)
+            {
+                SlowMoWidgetInstance->AddToViewport();
+            }
+        }
+    }
 }
 
 // Called to bind functionality to input
@@ -103,6 +117,12 @@ void APlayerCharacter::Tick(float DeltaTime)
     UpdateAim(DeltaTime);
     RotateCharacterToCursor(DeltaTime);
 
+    // Update SlowMo progress bar
+    if (SlowMoWidgetInstance)
+    {
+        float Percent = (SlowMoTotalTime > 0) ? SlowMoRemaining / SlowMoTotalTime : 0.f;
+        SlowMoWidgetInstance->UpdateSlowMoBar(Percent);
+    }
 }
 
 // ========== MOVEMENT ==========
@@ -157,13 +177,7 @@ void APlayerCharacter::StopAiming()
 // ========== SLOW MOTION SYSTEM ==========
 void APlayerCharacter::ToggleSlowMo()
 {
-    if (bIsInSlowMo) 
-    {
-        StopSlowMo();
-    }
-    else {
-        StartSlowMo();
-    }
+    bIsInSlowMo ? StopSlowMo() : StartSlowMo();
 }
 
 void APlayerCharacter::StartSlowMo()
