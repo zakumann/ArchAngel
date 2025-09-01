@@ -35,7 +35,7 @@ protected:
 	float OpenAngle = 90.f; // 문 열리는 각도
 
 	UPROPERTY(EditAnywhere, Category = "Door")
-	float OpenSpeed = 2.f; // 열고 닫히는 속도 (Lerp 보간)
+	float OpenSpeed = 20.f; // 열고 닫히는 속도 (Lerp 보간)
 
 	bool bIsOpen = false;
 
