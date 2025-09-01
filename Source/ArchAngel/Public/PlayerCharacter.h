@@ -83,13 +83,23 @@ protected:
 	class UInputAction* DodgeAction;
 
 	// ==== Movement ====
+public:
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bIsAiming = false;
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool IsAiming() const { return bIsAiming; }
+
+protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
 	float WalkSpeed = 300.f; 
 
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float JogSpeed = 600.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
-	float SprintSpeed = 600.f;
+	float SprintSpeed = 900.f;
 
 	// Smooth aiming variables
 	float AimArmLength;

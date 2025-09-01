@@ -10,10 +10,13 @@ void UMainAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
-	if (PlayerCharacter)
+	if (!PlayerCharacter)
 	{
-		PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
+		PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
+		if (PlayerCharacter)
+		{
+			PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
+		}
 	}
 }
 
@@ -21,20 +24,47 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 {
 	Super::NativeUpdateAnimation(DeltaTime);
 
-	if (PlayerCharacterMovement)
+	if (!PlayerCharacter)
 	{
-		GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
-
-		bIsSprinting = GroundSpeed >= SprintSpeed;
-		bIsFalling = PlayerCharacterMovement->IsFalling();
-		bIsCrouching = PlayerCharacterMovement->IsCrouching();
+		PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
 	}
-	else
-	{
 
-		GroundSpeed = 0.0f;
-		bIsSprinting = false;
-		bIsFalling = false;
-		bIsCrouching = false;
-	}
+    if (PlayerCharacterMovement && PlayerCharacter)
+    {
+        // 🔹 Speed
+        GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
+
+        // 🔹 State checks
+        bIsSprinting = GroundSpeed >= SprintSpeed;
+        bIsFalling = PlayerCharacterMovement->IsFalling();
+        bIsCrouching = PlayerCharacterMovement->IsCrouching();
+
+        // 🔹 Movement Direction (for BlendSpace)
+        MovementDirection = CalculateDirection(PlayerCharacterMovement->Velocity, PlayerCharacter->GetActorRotation());
+
+        // 🔹 Convert velocity into local forward/right movement
+        FVector Velocity = PlayerCharacterMovement->Velocity;
+        FVector Forward = PlayerCharacter->GetActorForwardVector();
+        FVector Right = PlayerCharacter->GetActorRightVector();
+
+        // Normalize only on XY plane
+        FVector NormalizedVel = Velocity.GetSafeNormal2D();
+
+        ForwardValue = FVector::DotProduct(NormalizedVel, Forward);
+        RightValue = FVector::DotProduct(NormalizedVel, Right);
+
+        // 🔹 Aiming state (get from character, or keep as is for now)
+        bIsAiming = PlayerCharacter->bIsAiming; // <-- make sure your PlayerCharacter has this
+    }
+    else
+    {
+        GroundSpeed = 0.0f;
+        bIsSprinting = false;
+        bIsFalling = false;
+        bIsCrouching = false;
+        MovementDirection = 0.0f;
+        ForwardValue = 0.0f;
+        RightValue = 0.0f;
+        bIsAiming = false;
+    }
 }

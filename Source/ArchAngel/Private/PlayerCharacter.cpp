@@ -168,6 +168,7 @@ void APlayerCharacter::StopAiming()
 {
     bIsAiming = false;
     CameraBoom->TargetArmLength = 100.f;
+    GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 
     // Back to movement-based rotation
     GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -228,7 +229,7 @@ void APlayerCharacter::StartSprint()
 void APlayerCharacter::StopSprint()
 {
     bIsSprinting = false;
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 }
 // ========== INTERACT ==========
 void APlayerCharacter::Interact()
@@ -271,7 +272,7 @@ void APlayerCharacter::HandleCrouchToggle()
         bIsCrouching = true;
 
         // Optional: reduce speed while crouching
-        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+        GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
     }
 
     // Cancel sprint if crouching
@@ -343,6 +344,8 @@ void APlayerCharacter::Dodge()
     // Lockout
     bCanDodge = false;
     GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]() { bCanDodge = true; }, DodgeCooldown, false);
+
+    bIsAiming = false;
 
     UE_LOG(LogTemp, Warning, TEXT("CachedMoveInput X=%f Y=%f"), CachedMoveInput.X, CachedMoveInput.Y);
 }

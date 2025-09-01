@@ -24,7 +24,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	class UCharacterMovementComponent* PlayerCharacterMovement;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadWrite, Category = "Movement")
 	float GroundSpeed = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
@@ -36,6 +36,18 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsCrouching = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float SprintSpeed = 600.0f;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Movement")
+	float MovementDirection = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	float ForwardValue = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement") 
+	float RightValue = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsAiming = false;
 };
