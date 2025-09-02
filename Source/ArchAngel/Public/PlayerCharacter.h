@@ -34,8 +34,8 @@ protected:
 	void StopAiming();
 	void Fire();
 	void ToggleSlowMo();
-	void StartSprint();
-	void StopSprint();
+	void StartWalk();
+	void StopWalk();
 	void Interact();
 	void ReloadWeapon();
 	void HandleCrouchToggle();
@@ -62,7 +62,7 @@ protected:
 	class UInputAction* AimAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	class UInputAction* SprintAction;
+	class UInputAction* WalkAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* FireAction;
@@ -97,9 +97,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float JogSpeed = 600.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
-	float SprintSpeed = 900.f;
 
 	// Smooth aiming variables
 	float AimArmLength;
@@ -150,7 +147,7 @@ protected:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	bool bIsSprinting = false;
+	bool bIsWalking = false;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Movement")
 	bool bIsCrouching = false;

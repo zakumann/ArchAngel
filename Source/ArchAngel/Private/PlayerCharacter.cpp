@@ -27,7 +27,7 @@ APlayerCharacter::APlayerCharacter()
     bUseControllerRotationPitch = false;
     bUseControllerRotationRoll = false;
 
-    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->bUseControllerDesiredRotation = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -94,8 +94,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAiming);
 
         // Bind Sprint
-        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartSprint);
-        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
+        EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartWalk);
+        EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopWalk);
 
         EnhancedInputComponent->BindAction(SlowAction, ETriggerEvent::Started, this, &APlayerCharacter::ToggleSlowMo);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Fire);
@@ -157,22 +157,16 @@ void APlayerCharacter::StartAiming()
     CameraBoom->TargetArmLength = 50.f;
 
     // Cancel sprint when aiming
-    bIsSprinting = false;
+    bIsWalking = true;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-
-    // Lock facing direction to camera, but still allow strafing
-    GetCharacterMovement()->bOrientRotationToMovement = false;
-    bUseControllerRotationYaw = true;
 }
 void APlayerCharacter::StopAiming()
 {
     bIsAiming = false;
     CameraBoom->TargetArmLength = 100.f;
-    GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 
-    // Back to movement-based rotation
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    bUseControllerRotationYaw = false;
+    bIsWalking = false;
+    GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 }
 
 // ========== SLOW MOTION SYSTEM ==========
@@ -212,7 +206,7 @@ void APlayerCharacter::StopSlowMo()
 }
 
 // ========== SPRINT ==========
-void APlayerCharacter::StartSprint()
+void APlayerCharacter::StartWalk()
 {
     if (!bIsAiming)
     {
@@ -221,14 +215,14 @@ void APlayerCharacter::StartSprint()
             UnCrouch();
             bIsCrouching = false;
         }
-        bIsSprinting = true;
-        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+        bIsWalking = true;
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; // Use WalkSpeed here
     }
 }
 
-void APlayerCharacter::StopSprint()
+void APlayerCharacter::StopWalk()
 {
-    bIsSprinting = false;
+    bIsWalking = false;
     GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 }
 // ========== INTERACT ==========
@@ -276,9 +270,9 @@ void APlayerCharacter::HandleCrouchToggle()
     }
 
     // Cancel sprint if crouching
-    if (bIsCrouching && bIsSprinting)
+    if (bIsCrouching && bIsWalking)
     {
-        bIsSprinting = false;
+        bIsWalking = false;
     }
 }
 

@@ -35,7 +35,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
         GroundSpeed = UKismetMathLibrary::VSizeXY(PlayerCharacterMovement->Velocity);
 
         // 🔹 State checks
-        bIsSprinting = GroundSpeed >= SprintSpeed;
+        bIsWalking = PlayerCharacter->bIsWalking;
         bIsFalling = PlayerCharacterMovement->IsFalling();
         bIsCrouching = PlayerCharacterMovement->IsCrouching();
 
@@ -59,7 +59,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
     else
     {
         GroundSpeed = 0.0f;
-        bIsSprinting = false;
+        bIsWalking = false;
         bIsFalling = false;
         bIsCrouching = false;
         MovementDirection = 0.0f;

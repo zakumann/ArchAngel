@@ -28,7 +28,7 @@ protected:
 	float GroundSpeed = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	bool bIsSprinting = false;
+	bool bIsWalking = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsFalling = false;
@@ -37,7 +37,7 @@ protected:
 	bool bIsCrouching = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	float SprintSpeed = 600.0f;
+	float JogSpeed = 600.0f;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Movement")
 	float MovementDirection = 0.0f;
