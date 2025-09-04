@@ -7,6 +7,8 @@
 #include "InputActionValue.h"
 #include "PlayerCharacter.generated.h"
 
+class UMainAnimInstance;
+
 UCLASS()
 class ARCHANGEL_API APlayerCharacter : public ACharacter
 {
@@ -98,6 +100,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float JogSpeed = 600.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float CrouchSpeed = 150.f;
+
 	// Smooth aiming variables
 	float AimArmLength;
 	float TargetAimArmLength;
@@ -119,6 +124,9 @@ protected:
 	// cache last movement input from Move()
 	FVector2D CachedMoveInput = FVector2D::ZeroVector;
 	FTimerHandle DodgeCooldownTimerHandle;
+
+	UPROPERTY()
+	UMainAnimInstance* AnimInstanceRef;
 
 	// ==== Slow Motion Pool ====
 	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion") 

@@ -14,8 +14,7 @@
 #include "TimerManager.h"
 #include "DrawDebugHelpers.h"
 #include "UMG/SlowMoWidget.h"
-
-
+#include "MainAnimInstance.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -50,6 +49,8 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    AnimInstanceRef = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance());
 
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -257,7 +258,7 @@ void APlayerCharacter::HandleCrouchToggle()
         bIsCrouching = false;
 
         // Restore normal walk speed
-        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+        GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
     }
     else
     {
@@ -266,7 +267,7 @@ void APlayerCharacter::HandleCrouchToggle()
         bIsCrouching = true;
 
         // Optional: reduce speed while crouching
-        GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
+        GetCharacterMovement()->MaxWalkSpeed = CrouchSpeed;
     }
 
     // Cancel sprint if crouching
@@ -333,11 +334,35 @@ void APlayerCharacter::Dodge()
     // Launch
     LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
 
+    // Choose enum for animation
+    EDodgeDirection DirEnum = EDodgeDirection::Forward;
+    const float ForwardDot = FVector::DotProduct(DodgeDir, Forward);
+    const float RightDot = FVector::DotProduct(DodgeDir, Right);
+
+    if (ForwardDot > 0.7f) DirEnum = EDodgeDirection::Forward;
+    else if (ForwardDot < -0.7f) DirEnum = EDodgeDirection::Backward;
+    else if (RightDot > 0.7f) DirEnum = EDodgeDirection::Right;
+    else if (RightDot < -0.7f) DirEnum = EDodgeDirection::Left;
+
+    // Tell AnimInstance we are dodging
+    if (UMainAnimInstance* AnimInst = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance()))
+    {
+        AnimInst->bIsDodging = true;
+        AnimInst->DodgeDirection = DodgeDir;
+    }
+
     StartSlowMo();
 
     // Lockout
     bCanDodge = false;
-    GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]() { bCanDodge = true; }, DodgeCooldown, false);
+    GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]() 
+    { 
+        bCanDodge = true;
+        if (UMainAnimInstance* AnimInst = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance()))
+        {
+            AnimInst->bIsDodging = false;
+        }
+    },DodgeCooldown, false);
 
     bIsAiming = false;
 

@@ -6,6 +6,15 @@
 #include "Animation/AnimInstance.h"
 #include "MainAnimInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class EDodgeDirection : uint8
+{
+	Forward,
+	Backward,
+	Left,
+	Right
+};
+
 /**
  * 
  */
@@ -16,6 +25,16 @@ class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
+
+	// === Dodge System ===
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Dodge")
+	bool bIsDodging = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Dodge")
+	FVector DodgeDirection = FVector::ZeroVector;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Dodge")
+	EDodgeDirection DodgeDirEnum = EDodgeDirection::Forward;
 
 protected:
 	UPROPERTY(BlueprintReadOnly)
