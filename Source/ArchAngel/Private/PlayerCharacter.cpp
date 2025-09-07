@@ -160,6 +160,11 @@ void APlayerCharacter::StartAiming()
     // Cancel sprint when aiming
     bIsWalking = true;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+
+    if (bIsCrouching)
+    {
+        CameraBoom->TargetArmLength = 100.f;
+    }
 }
 void APlayerCharacter::StopAiming()
 {
@@ -268,6 +273,7 @@ void APlayerCharacter::HandleCrouchToggle()
 
         // Optional: reduce speed while crouching
         GetCharacterMovement()->MaxWalkSpeed = CrouchSpeed;
+        bIsAiming = false;
     }
 
     // Cancel sprint if crouching

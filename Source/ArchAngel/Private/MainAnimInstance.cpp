@@ -55,6 +55,15 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
         // 🔹 Aiming state (get from character, or keep as is for now)
         bIsAiming = PlayerCharacter->bIsAiming; // <-- make sure your PlayerCharacter has this
+
+        bIsCrouchAiming = PlayerCharacter->bIsCrouching && PlayerCharacter->bIsAiming;
+
+        FRotator ControlRot = PlayerCharacter->GetControlRotation();
+        FRotator ActorRot = PlayerCharacter->GetActorRotation();
+        FRotator DeltaRot = ControlRot - ActorRot;
+
+        AimPitch = FMath::ClampAngle(DeltaRot.Pitch, -90.f, 90.f);
+        AimYaw = FMath::ClampAngle(DeltaRot.Yaw, -90.f, 90.f);
     }
     else
     {

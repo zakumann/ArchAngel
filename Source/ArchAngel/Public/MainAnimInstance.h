@@ -69,4 +69,14 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsAiming = false;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsCrouchAiming = false;
+
+	// == Aim Off ==
+	UPROPERTY(BlueprintReadWrite, Category = "Aim")
+	float AimPitch = 0.f;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Aim")
+	float AimYaw = 0.f;
 };
