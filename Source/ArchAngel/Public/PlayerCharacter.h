@@ -41,14 +41,13 @@ protected:
 	void Interact();
 	void ReloadWeapon();
 	void HandleCrouchToggle();
-	void RotateCharacterToCursor(float DeltaTime);
 	void UpdateAim(float DeltaSeconds);
 
 	// ==== Camera ====
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* CameraBoom;
 
-	UPROPERTY(VisibleAnywhere) 
+	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
 	// Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -94,8 +93,8 @@ public:
 
 protected:
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement") 
-	float WalkSpeed = 300.f; 
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float WalkSpeed = 300.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float JogSpeed = 600.f;
@@ -112,13 +111,13 @@ protected:
 
 	// Dodge setting
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float DodgeStrength = 1200.f;
+	float DodgeStrength = 1500.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float DodgeCooldown = 1.0f;
+	float DodgeCooldown = 1.2f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float UpwardBoostZ = 200.f;
+	float UpwardBoostZ = 300.f;
 
 	bool bCanDodge = true;
 	// cache last movement input from Move()
@@ -129,16 +128,16 @@ protected:
 	UMainAnimInstance* AnimInstanceRef;
 
 	// ==== Slow Motion Pool ====
-	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion") 
+	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion")
 	float SlowMoTotalTime = 3.0f; // 3s pool 
 
 	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion")
-	float SlowMoRechargeDelay = 5.0f; 
+	float SlowMoRechargeDelay = 5.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion")
 	float SlowMoRechargeRate = 1.0f; // per sec 
 
-	float SlowMoRemaining; 
+	float SlowMoRemaining;
 	bool bIsInSlowMo = false;
 	FTimerHandle SlowMoTimerHandle;
 	FTimerHandle SlowMoRechargeHandle;

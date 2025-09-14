@@ -16,7 +16,7 @@ enum class EDodgeDirection : uint8
 };
 
 /**
- * 
+ *
  */
 UCLASS()
 class ARCHANGEL_API UMainAnimInstance : public UAnimInstance
@@ -64,7 +64,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float ForwardValue = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement") 
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float RightValue = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")

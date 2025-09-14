@@ -8,26 +8,26 @@
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
-	Super::NativeInitializeAnimation();
+    Super::NativeInitializeAnimation();
 
-	if (!PlayerCharacter)
-	{
-		PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
-		if (PlayerCharacter)
-		{
-			PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
-		}
-	}
+    if (!PlayerCharacter)
+    {
+        PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
+        if (PlayerCharacter)
+        {
+            PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
+        }
+    }
 }
 
 void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 {
-	Super::NativeUpdateAnimation(DeltaTime);
+    Super::NativeUpdateAnimation(DeltaTime);
 
-	if (!PlayerCharacter)
-	{
-		PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
-	}
+    if (!PlayerCharacter)
+    {
+        PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
+    }
 
     if (PlayerCharacterMovement && PlayerCharacter)
     {

@@ -26,7 +26,8 @@ APlayerCharacter::APlayerCharacter()
     bUseControllerRotationPitch = false;
     bUseControllerRotationRoll = false;
 
-    GetCharacterMovement()->bUseControllerDesiredRotation = true;
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -116,7 +117,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateAim(DeltaTime);
-    RotateCharacterToCursor(DeltaTime);
 
     // Update SlowMo progress bar
     if (SlowMoWidgetInstance)
@@ -140,7 +140,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
     const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
     AddMovementInput(ForwardDirection, MovementVector.Y);
     const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-    AddMovementInput(RightDirection, MovementVector.X); 
+    AddMovementInput(RightDirection, MovementVector.X);
 }
 
 // ========== LOOK ==========
@@ -155,6 +155,11 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::StartAiming()
 {
     bIsAiming = true;
+
+    // Switch to controller rotation
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+    GetCharacterMovement()->bUseControllerDesiredRotation = true;
+
     CameraBoom->TargetArmLength = 50.f;
 
     // Cancel sprint when aiming
@@ -169,6 +174,11 @@ void APlayerCharacter::StartAiming()
 void APlayerCharacter::StopAiming()
 {
     bIsAiming = false;
+
+    // Back to orient rotation to movement
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
+
     CameraBoom->TargetArmLength = 100.f;
 
     bIsWalking = false;
@@ -185,7 +195,7 @@ void APlayerCharacter::StartSlowMo()
 {
     if (bIsInSlowMo || SlowMoRemaining <= 0.f) return;
 
-    UGameplayStatics::SetGlobalTimeDilation(this, 0.25f); 
+    UGameplayStatics::SetGlobalTimeDilation(this, 0.25f);
     bIsInSlowMo = true;
 
     GetWorldTimerManager().SetTimer(SlowMoTimerHandle, [this]() { StopSlowMo(); }, SlowMoRemaining, false);
@@ -201,14 +211,14 @@ void APlayerCharacter::StopSlowMo()
 
     // recharge after delay
     GetWorldTimerManager().SetTimer(SlowMoRechargeHandle, [this]()
-    {
-        GetWorldTimerManager().SetTimer(SlowMoRechargeHandle, [this]()
         {
-            SlowMoRemaining = FMath::Min(SlowMoRemaining + SlowMoRechargeRate, SlowMoTotalTime);
-            if (SlowMoRemaining >= SlowMoTotalTime)
-                GetWorldTimerManager().ClearTimer(SlowMoRechargeHandle);
-        }, 1.f, true);
-    }, SlowMoRechargeDelay, false);
+            GetWorldTimerManager().SetTimer(SlowMoRechargeHandle, [this]()
+                {
+                    SlowMoRemaining = FMath::Min(SlowMoRemaining + SlowMoRechargeRate, SlowMoTotalTime);
+                    if (SlowMoRemaining >= SlowMoTotalTime)
+                        GetWorldTimerManager().ClearTimer(SlowMoRechargeHandle);
+                }, 1.f, true);
+        }, SlowMoRechargeDelay, false);
 }
 
 // ========== SPRINT ==========
@@ -283,19 +293,6 @@ void APlayerCharacter::HandleCrouchToggle()
     }
 }
 
-void APlayerCharacter::RotateCharacterToCursor(float DeltaTime)
-{
-    if (!bIsAiming) return;
-
-    FRotator ControlRot = GetControlRotation();
-    ControlRot.Pitch = 0.f; // Ignore pitch so character stays upright
-    ControlRot.Roll = 0.f;
-
-    // Smooth rotation toward camera yaw
-    FRotator NewRot = FMath::RInterpTo(GetActorRotation(), ControlRot, DeltaTime, 15.f);
-    SetActorRotation(NewRot);
-}
-
 // ========== FIRE / RELOAD ==========
 void APlayerCharacter::Fire()
 {
@@ -330,45 +327,46 @@ void APlayerCharacter::Dodge()
     FVector DodgeDir = (Forward * CachedMoveInput.Y + Right * CachedMoveInput.X);
 
     // Default forward if no input
-    if (DodgeDir.IsNearlyZero()) 
+    if (DodgeDir.IsNearlyZero())
     {
         DodgeDir = Forward;
     }
 
-    DodgeDir = DodgeDir.GetSafeNormal();
+    DodgeDir.Normalize();
 
     // Launch
     LaunchCharacter(DodgeDir * DodgeStrength + FVector(0.f, 0.f, UpwardBoostZ), true, true);
 
     // Choose enum for animation
     EDodgeDirection DirEnum = EDodgeDirection::Forward;
-    const float ForwardDot = FVector::DotProduct(DodgeDir, Forward);
-    const float RightDot = FVector::DotProduct(DodgeDir, Right);
-
-    if (ForwardDot > 0.7f) DirEnum = EDodgeDirection::Forward;
-    else if (ForwardDot < -0.7f) DirEnum = EDodgeDirection::Backward;
-    else if (RightDot > 0.7f) DirEnum = EDodgeDirection::Right;
-    else if (RightDot < -0.7f) DirEnum = EDodgeDirection::Left;
 
     // Tell AnimInstance we are dodging
     if (UMainAnimInstance* AnimInst = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance()))
     {
         AnimInst->bIsDodging = true;
         AnimInst->DodgeDirection = DodgeDir;
+
+        const float ForwardDot = FVector::DotProduct(DodgeDir, Forward);
+        const float RightDot = FVector::DotProduct(DodgeDir, Right);
+
+        if (ForwardDot > 0.7f) DirEnum = EDodgeDirection::Forward;
+        else if (ForwardDot < -0.7f) DirEnum = EDodgeDirection::Backward;
+        else if (RightDot > 0.7f) DirEnum = EDodgeDirection::Right;
+        else if (RightDot < -0.7f) DirEnum = EDodgeDirection::Left;
     }
 
     StartSlowMo();
 
     // Lockout
     bCanDodge = false;
-    GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]() 
-    { 
-        bCanDodge = true;
-        if (UMainAnimInstance* AnimInst = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance()))
+    GetWorldTimerManager().SetTimer(DodgeCooldownTimerHandle, [this]()
         {
-            AnimInst->bIsDodging = false;
-        }
-    },DodgeCooldown, false);
+            bCanDodge = true;
+            if (UMainAnimInstance* AnimInst = Cast<UMainAnimInstance>(GetMesh()->GetAnimInstance()))
+            {
+                AnimInst->bIsDodging = false;
+            }
+        }, DodgeCooldown, false);
 
     bIsAiming = false;
 
