@@ -1,0 +1,42 @@
+# Unreal Engine generated files and folders
+.vs/
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+Plugins/*/Intermediate/
+Plugins/*/Binaries/
+
+# Visual Studio files
+*.VC.db
+*.sdf
+*.suo
+*.user
+*.opendb
+*.sln.docstates
+*.v11.suo
+*.v12.suo
+*.v14.suo
+*.v15.suo
+*.v16.suo
+*.v17.suo
+*.v18.suo
+*.v19.suo
+
+# JetBrains Rider files
+.idea/
+*.csproj.DotSettings
+*.userprefs
+
+# Mac OS X files
+.DS_Store
+
+# Log files
+*.log
+
+# Crash reports
+CrashReportClient/
+
+# Optional: If you don't want to track the .sln file
+# *.sln 
