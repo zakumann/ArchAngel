@@ -26,7 +26,7 @@ APlayerCharacter::APlayerCharacter()
 	
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
-	CameraBoom->TargetArmLength = 250.f;
+	CameraBoom->TargetArmLength = 350.f;
 	CameraBoom->bUsePawnControlRotation = false; 
 	// This is the important part: socket offset for side + height 
 	CameraBoom->SocketOffset = FVector(0.0f, 70.0f, 80.0f); 
@@ -84,6 +84,18 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void APlayerCharacter::StartWalk(const FInputActionValue& Value)
+{
+	bWantsToWalk = true;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void APlayerCharacter::StopWalk(const FInputActionValue& Value)
+{
+	bWantsToWalk = false;
+	GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
+}
+
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
@@ -103,5 +115,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Bind the look input action
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+
+		//Walk
+		EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Started, this, &APlayerCharacter::StartWalk);
+		EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopWalk);
 	}
 }

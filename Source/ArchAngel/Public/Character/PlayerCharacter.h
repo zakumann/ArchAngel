@@ -24,6 +24,9 @@ protected:
 	void Move(const FInputActionValue & Value);
 	void Look(const FInputActionValue& Value);
 
+	void StartWalk(const FInputActionValue& Value);
+	void StopWalk(const FInputActionValue& Value);
+
 	// ==== Camera ==== 
 	UPROPERTY(VisibleAnywhere) 
 	class USpringArmComponent* CameraBoom;
@@ -40,6 +43,20 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* WalkAction;
+
+	// State
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	bool bWantsToWalk = false;
+
+	// Movement speeds
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float WalkSpeed = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float JogSpeed = 600.f;
 
 public:	
 	// Called every frame
