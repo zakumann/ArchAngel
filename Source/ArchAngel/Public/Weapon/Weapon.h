@@ -7,6 +7,7 @@
 #include "Weapon.generated.h"
 
 class USkeletalMeshComponent;
+class USphereComponent;
 
 UCLASS()
 class ARCHANGEL_API AWeapon : public AActor
@@ -28,4 +29,7 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USphereComponent> CollisionSphere;
 };
