@@ -27,7 +27,10 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnComponentOverlap);
+	CollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnComponentEndOverlap);
 }
+
 
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
@@ -36,3 +39,13 @@ void AWeapon::Tick(float DeltaTime)
 
 }
 
+
+void AWeapon::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Something overlapped with weapon"));
+}
+
+void AWeapon::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Something Exited!"));
+}

@@ -20,13 +20,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Movement and look functions void 
-	void Move(const FInputActionValue & Value);
-	void Look(const FInputActionValue& Value);
-
-	void StartWalk(const FInputActionValue& Value);
-	void StopWalk(const FInputActionValue& Value);
-
 	// ==== Camera ==== 
 	UPROPERTY(VisibleAnywhere) 
 	class USpringArmComponent* CameraBoom;
@@ -46,6 +39,19 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* WalkAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* InterAction;
+
+
+	// Input Functions ===================================
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+
+	void StartWalk(const FInputActionValue& Value);
+	void StopWalk(const FInputActionValue& Value);
+
+	void Interact(const FInputActionValue& Value);
 
 	// State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
