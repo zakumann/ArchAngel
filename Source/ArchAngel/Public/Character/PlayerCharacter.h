@@ -7,6 +7,8 @@
 #include "InputActionValue.h"
 #include "PlayerCharacter.generated.h"
 
+class AWeapon;
+
 UCLASS()
 class ARCHANGEL_API APlayerCharacter : public ACharacter
 {
@@ -15,6 +17,12 @@ class ARCHANGEL_API APlayerCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -43,7 +51,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* InterAction;
 
-
 	// Input Functions ===================================
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -52,6 +59,12 @@ protected:
 	void StopWalk(const FInputActionValue& Value);
 
 	void Interact(const FInputActionValue& Value);
+
+	// Weapon Variable
+	bool bCanPickupWeapon = false;
+
+	UPROPERTY()
+	TObjectPtr<AWeapon> Weapon;
 
 	// State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
@@ -64,10 +77,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float JogSpeed = 600.f;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+public:
+	//Setters And Getters
+	FORCEINLINE void SetCanPickup(bool NewPickup) { bCanPickupWeapon = NewPickup; }
+	FORCEINLINE void SetWeapon(AWeapon* NewWeapon) { Weapon = NewWeapon; }
 };

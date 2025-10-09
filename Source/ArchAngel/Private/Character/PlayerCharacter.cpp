@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Weapon/Weapon.h"
+#include "Components/SphereComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -127,6 +129,13 @@ void APlayerCharacter::StopWalk(const FInputActionValue& Value)
 
 void APlayerCharacter::Interact(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("InterAction"));
+	if (bCanPickupWeapon && Weapon)
+	{
+		Weapon->CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
+		Weapon->SetActorRelativeLocation(FVector(0.f, 0.f, 0.f));
+		Weapon->SetActorRelativeRotation(FRotator(0.0, 0.0, 0.0));
+
+	}
 }
 

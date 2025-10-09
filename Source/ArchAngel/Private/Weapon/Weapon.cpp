@@ -4,6 +4,7 @@
 #include "Weapon/Weapon.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
+#include "Character/PlayerCharacter.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -13,13 +14,10 @@ AWeapon::AWeapon()
 
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	RootComponent = CollisionSphere;
-	CollisionSphere->SetSphereRadius(20.f);
+	CollisionSphere->SetSphereRadius(30.f);
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(CollisionSphere);
-
-	WeaponMesh->SetRelativeLocation(FVector(-9.0f, 0.0f, -6.0f));
-	WeaponMesh->SetRelativeRotation(FRotator(0.0, -90.0, 0.0));
 }
 
 // Called when the game starts or when spawned
@@ -42,10 +40,21 @@ void AWeapon::Tick(float DeltaTime)
 
 void AWeapon::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Something overlapped with weapon"));
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->SetCanPickup(true);
+		PlayerCharacter->SetWeapon(this);
+		UE_LOG(LogTemp, Warning, TEXT("Pick up the Weapon!"));
+	}
 }
 
 void AWeapon::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Something Exited!"));
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->SetCanPickup(false);
+		UE_LOG(LogTemp, Warning, TEXT("You can't pick up the Weapon"));
+	}
 }
