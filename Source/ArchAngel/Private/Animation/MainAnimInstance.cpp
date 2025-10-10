@@ -5,6 +5,8 @@
 #include "Character/PlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "PoseSearch/PoseSearchLibrary.h"
+#include "PoseSearch/PoseSearchDatabase.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -25,8 +27,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	if (PlayerCharacter)
 	{
 		FVector Velocity = PlayerCharacter->GetVelocity();
-		Velocity.Z = 0; // Ignore vertical velocity for speed
-
+		Velocity.Z = 0.f;
 		Speed = Velocity.Size();
 
 		// Calculate movement direction relative to character rotation

@@ -66,6 +66,9 @@ protected:
 	UPROPERTY()
 	TObjectPtr<AWeapon> Weapon;
 
+	UPROPERTY(BlueprintReadOnly, meta = (AlloPrivateAccess = "true"))
+	bool bHasPistol = false;
+
 	// State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	bool bWantsToWalk = false;

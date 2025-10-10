@@ -1,10 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// This code copyright is owned by a third party. Redistribution, modification or use of this code is not permitted without prior written consent from the copyright holder.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "MainAnimInstance.generated.h"
+
+class UPoseSearchDatabase;
 
 /**
  * 
@@ -18,6 +20,7 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 
 protected:
+
 	// Reference to owning character
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character")
 	class APlayerCharacter* PlayerCharacter;

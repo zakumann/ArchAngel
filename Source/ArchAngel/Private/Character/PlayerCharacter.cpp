@@ -135,7 +135,7 @@ void APlayerCharacter::Interact(const FInputActionValue& Value)
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
 		Weapon->SetActorRelativeLocation(FVector(0.f, 0.f, 0.f));
 		Weapon->SetActorRelativeRotation(FRotator(0.0, 0.0, 0.0));
-
-	}
+		bHasPistol = true;
+	};
 }
 
