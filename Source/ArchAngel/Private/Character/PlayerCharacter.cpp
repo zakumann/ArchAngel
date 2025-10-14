@@ -78,6 +78,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Interact
 		EnhancedInputComponent->BindAction(InterAction, ETriggerEvent::Started, this, &APlayerCharacter::Interact);
+
+		// Interact
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &APlayerCharacter::Shoot);
 	}
 }
 
@@ -137,5 +140,18 @@ void APlayerCharacter::Interact(const FInputActionValue& Value)
 		Weapon->SetActorRelativeRotation(FRotator(0.0, 0.0, 0.0));
 		bHasPistol = true;
 	};
+}
+
+void APlayerCharacter::Shoot(const FInputActionValue& Value)
+{
+	if (Weapon && bHasPistol)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && FireMontage)
+		{
+			AnimInstance->Montage_Play(FireMontage);
+		}
+		Weapon->WeaponShoot();
+	}
 }
 

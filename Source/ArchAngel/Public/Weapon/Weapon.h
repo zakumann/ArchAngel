@@ -33,8 +33,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionSphere;
+
+	void WeaponShoot();
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	TObjectPtr<USceneComponent> ProjectileLocation;
+
+	UPROPERTY(EditAnywhere, Category = "Animations")
+	TObjectPtr<UAnimMontage> FireMontage;
 };

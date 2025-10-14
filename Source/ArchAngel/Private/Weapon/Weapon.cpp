@@ -18,6 +18,9 @@ AWeapon::AWeapon()
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(CollisionSphere);
+
+	ProjectileLocation = CreateDefaultSubobject<USceneComponent>("ProjectileLocation");
+	ProjectileLocation->SetupAttachment(WeaponMesh);
 }
 
 // Called when the game starts or when spawned
@@ -35,6 +38,15 @@ void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AWeapon::WeaponShoot()
+{
+	UAnimInstance* AnimInstance = WeaponMesh->GetAnimInstance();
+	if (AnimInstance && FireMontage)
+	{
+		AnimInstance->Montage_Play(FireMontage);
+	}
 }
 
 

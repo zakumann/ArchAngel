@@ -4,9 +4,7 @@
 #include "Animation/MainAnimInstance.h"
 #include "Character/PlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "PoseSearch/PoseSearchLibrary.h"
-#include "PoseSearch/PoseSearchDatabase.h"
+
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -23,15 +21,19 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		PlayerCharacter = Cast<APlayerCharacter>(TryGetPawnOwner());
 	}
+	if (!PlayerCharacter) return;
 
 	if (PlayerCharacter)
 	{
 		FVector Velocity = PlayerCharacter->GetVelocity();
-		Velocity.Z = 0.f;
+		Velocity.Z = 0; // Ignore vertical velocity for speed
+
 		Speed = Velocity.Size();
 
 		// Calculate movement direction relative to character rotation
 		FRotator ActorRotation = PlayerCharacter->GetActorRotation();
 		Direction = CalculateDirection(Velocity, ActorRotation);
+
+		bHasWeapon = PlayerCharacter->bHasPistol;
 	}
 }

@@ -51,6 +51,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* InterAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* ShootAction;
+
 	// Input Functions ===================================
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -60,14 +63,13 @@ protected:
 
 	void Interact(const FInputActionValue& Value);
 
+	void Shoot(const FInputActionValue& Value);
+
 	// Weapon Variable
 	bool bCanPickupWeapon = false;
 
 	UPROPERTY()
 	TObjectPtr<AWeapon> Weapon;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AlloPrivateAccess = "true"))
-	bool bHasPistol = false;
 
 	// State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
@@ -79,6 +81,13 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float JogSpeed = 600.f;
+
+public:
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	bool bHasPistol = false;
+
+	UPROPERTY(EditAnywhere, Category = "Animations")
+	TObjectPtr<UAnimMontage> FireMontage;
 
 public:
 	//Setters And Getters

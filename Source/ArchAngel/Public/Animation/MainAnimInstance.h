@@ -6,8 +6,6 @@
 #include "Animation/AnimInstance.h"
 #include "MainAnimInstance.generated.h"
 
-class UPoseSearchDatabase;
-
 /**
  * 
  */
@@ -22,14 +20,17 @@ public:
 protected:
 
 	// Reference to owning character
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character")
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 	class APlayerCharacter* PlayerCharacter;
 
 	// Movement speed
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 	float Speed;
 
 	// Movement direction (for blendspace)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 	float Direction;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	bool bHasWeapon;
 };
