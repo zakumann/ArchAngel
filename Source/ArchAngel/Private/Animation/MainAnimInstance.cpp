@@ -4,7 +4,8 @@
 #include "Animation/MainAnimInstance.h"
 #include "Character/PlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Kismet/KismetMathLibrary.h"
+#include "GameFramework/Controller.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -35,5 +36,12 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		Direction = CalculateDirection(Velocity, ActorRotation);
 
 		bHasWeapon = PlayerCharacter->bHasPistol;
+
+		// Aiming
+		FRotator ControlRot = PlayerCharacter->GetControlRotation();
+		FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRotation);
+
+		AimYaw = DeltaRot.Yaw;
+		AimPitch = DeltaRot.Pitch;
 	}
 }
