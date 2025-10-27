@@ -65,11 +65,6 @@ protected:
 
 	void Shoot(const FInputActionValue& Value);
 
-	// Weapon Variable
-	bool bCanPickupWeapon = false;
-
-	UPROPERTY()
-	TObjectPtr<AWeapon> Weapon;
 
 	// State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
@@ -81,16 +76,4 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float JogSpeed = 600.f;
-
-public:
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-	bool bHasPistol = false;
-
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	TObjectPtr<UAnimMontage> FireMontage;
-
-public:
-	//Setters And Getters
-	FORCEINLINE void SetCanPickup(bool NewPickup) { bCanPickupWeapon = NewPickup; }
-	FORCEINLINE void SetWeapon(AWeapon* NewWeapon) { Weapon = NewWeapon; }
 };

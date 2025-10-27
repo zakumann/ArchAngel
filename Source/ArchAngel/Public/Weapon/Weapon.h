@@ -6,8 +6,15 @@
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
-class USkeletalMeshComponent;
-class USphereComponent;
+UENUM(BlueprintType)
+enum class EWeaponState : uint8
+{
+	EWS_Initial UMETA(DisplayName = "Initial State"),
+	EWS_Equipped UMETA(DisplayName = "Equipped"),
+	EWS_Dropped UMETA(DisplayName = "Dropped"),
+
+	EWS_MAX UMETA(DisplayName = "DefaultMAX")
+};
 
 UCLASS()
 class ARCHANGEL_API AWeapon : public AActor
@@ -17,31 +24,44 @@ class ARCHANGEL_API AWeapon : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AWeapon();
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnSphereOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
 
 	UFUNCTION()
-	void OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void OnSphereEndOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	TObjectPtr<USphereComponent> CollisionSphere;
-
-	void WeaponShoot();
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	class USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	TObjectPtr<USceneComponent> ProjectileLocation;
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	class USphereComponent* AreaSphere;
 
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	TObjectPtr<UAnimMontage> FireMontage;
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	EWeaponState WeaponState;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	class UWidgetComponent* PickupWidget;
+public:	
+	// For external calls
+	void SetWeaponState(EWeaponState NewState);
 };

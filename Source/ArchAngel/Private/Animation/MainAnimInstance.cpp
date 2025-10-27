@@ -5,6 +5,7 @@
 #include "Character/PlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "KismetAnimationLibrary.h"
 #include "GameFramework/Controller.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
@@ -31,11 +32,11 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 		Speed = Velocity.Size();
 
+		// Calculate movement direction relative to actor rotation
+		Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, PlayerCharacter->GetActorRotation());
+
 		// Calculate movement direction relative to character rotation
 		FRotator ActorRotation = PlayerCharacter->GetActorRotation();
-		Direction = CalculateDirection(Velocity, ActorRotation);
-
-		bHasWeapon = PlayerCharacter->bHasPistol;
 
 		// Aiming
 		FRotator ControlRot = PlayerCharacter->GetControlRotation();

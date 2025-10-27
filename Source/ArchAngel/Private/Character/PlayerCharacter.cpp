@@ -132,26 +132,11 @@ void APlayerCharacter::StopWalk(const FInputActionValue& Value)
 
 void APlayerCharacter::Interact(const FInputActionValue& Value)
 {
-	if (bCanPickupWeapon && Weapon)
-	{
-		Weapon->CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
-		Weapon->SetActorRelativeLocation(FVector(0.f, 0.f, 0.f));
-		Weapon->SetActorRelativeRotation(FRotator(0.0, 0.0, 0.0));
-		bHasPistol = true;
-	};
+
 }
 
 void APlayerCharacter::Shoot(const FInputActionValue& Value)
 {
-	if (Weapon && bHasPistol)
-	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && FireMontage)
-		{
-			AnimInstance->Montage_Play(FireMontage);
-		}
-		Weapon->WeaponShoot();
-	}
+
 }
 

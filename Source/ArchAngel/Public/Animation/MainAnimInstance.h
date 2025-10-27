@@ -1,4 +1,4 @@
-// This code copyright is owned by a third party. Redistribution, modification or use of this code is not permitted without prior written consent from the copyright holder.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,10 +29,7 @@ protected:
 
 	// Movement direction (for blendspace)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
-	float Direction;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-	bool bHasWeapon;
+	float Direction = 0.f;
 
 	// For Aim Offset
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
