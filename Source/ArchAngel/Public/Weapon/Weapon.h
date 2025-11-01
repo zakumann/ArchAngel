@@ -27,6 +27,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void ShowPickupWidget(bool bShowWidget);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -61,7 +63,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
-public:	
-	// For external calls
-	void SetWeaponState(EWeaponState NewState);
+public:
+	FORCEINLINE void SetWeaponState(EWeaponState State) { WeaponState = State; }
 };

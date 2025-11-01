@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Weapon/Weapon.h"
 #include "Components/SphereComponent.h"
+#include "PlayerComponent/CombatComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -36,6 +37,9 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; 
+
+	Combat = CreateDefaultSubobject <UCombatComponent>(TEXT("CombatComponent"));
+	Combat->SetIsReplicated(true);
 }
 
 // Called when the game starts or when spawned
@@ -81,6 +85,15 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Interact
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &APlayerCharacter::Shoot);
+	}
+}
+
+void APlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (Combat)
+	{
+		Combat->Character = this;
 	}
 }
 
@@ -132,11 +145,29 @@ void APlayerCharacter::StopWalk(const FInputActionValue& Value)
 
 void APlayerCharacter::Interact(const FInputActionValue& Value)
 {
-
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 void APlayerCharacter::Shoot(const FInputActionValue& Value)
 {
 
+}
+
+void APlayerCharacter::SetOverlappingWeapon(AWeapon* Weapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+
+	OverlappingWeapon = Weapon;
+
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
 }
 

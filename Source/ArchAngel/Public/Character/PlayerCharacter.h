@@ -24,6 +24,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void PostInitializeComponents() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -34,6 +35,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+	AWeapon* OverlappingWeapon;
+
+	UPROPERTY(VisibleAnywhere)
+	class UCombatComponent* Combat;
 
 	// Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input") 
@@ -76,4 +83,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float JogSpeed = 600.f;
+
+public:
+	void SetOverlappingWeapon(AWeapon* Weapon);
 };

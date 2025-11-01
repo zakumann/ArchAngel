@@ -50,47 +50,28 @@ void AWeapon::BeginPlay()
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
-	if (PlayerCharacter && PickupWidget)
+	if (PlayerCharacter)
 	{
-		PickupWidget->SetVisibility(true);
+		PlayerCharacter->SetOverlappingWeapon(this);
 	}
 }
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
-	if (PlayerCharacter && PickupWidget)
+	if (PlayerCharacter)
 	{
-		PickupWidget->SetVisibility(false);
+		PlayerCharacter->SetOverlappingWeapon(nullptr);
 	}
 }
 
-void AWeapon::SetWeaponState(EWeaponState NewState)
+void AWeapon::ShowPickupWidget(bool bShowWidget)
 {
-	WeaponState = NewState;
-
-	switch (WeaponState)
+	if (PickupWidget)
 	{
-	case EWeaponState::EWS_Equipped:
-		// Hide widget, disable sphere collision
-		if (PickupWidget) PickupWidget->SetVisibility(false);
-		if (AreaSphere) AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		// Possibly disable mesh collision too
-		break;
-
-	case EWeaponState::EWS_Dropped:
-		// Enable sphere again, show widget when overlap occurs
-		if (AreaSphere) AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		// Widget will show via overlap logic
-		break;
-
-	case EWeaponState::EWS_Initial:
-	default:
-		// Default logic
-		break;
+		PickupWidget->SetVisibility(bShowWidget);
 	}
 }
-
 
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
