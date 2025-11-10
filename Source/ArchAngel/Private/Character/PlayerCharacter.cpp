@@ -50,6 +50,12 @@ void APlayerCharacter::BeginPlay()
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
+
+		if (PlayerController->PlayerCameraManager)
+		{
+			PlayerController->PlayerCameraManager->ViewPitchMin = -45.0f;
+			PlayerController->PlayerCameraManager->ViewPitchMax = 45.0f;
+		}
 	}
 }
 
