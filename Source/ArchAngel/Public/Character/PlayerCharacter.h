@@ -61,6 +61,19 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	/** Called for start walking */
+	void StartWalking();
+
+	/** Called for stop walking */
+	void StopWalking();
+
+	// Movement Speeds
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float WalkSpeed = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float JogSpeed = 500.f;
+
 private:
 	// for smoothing the look inputs
 	float SmoothedYawInput = 0.f;
