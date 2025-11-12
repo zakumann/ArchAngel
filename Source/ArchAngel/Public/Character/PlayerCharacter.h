@@ -38,6 +38,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* LookAction;
 
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* WalkAction;
+
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
