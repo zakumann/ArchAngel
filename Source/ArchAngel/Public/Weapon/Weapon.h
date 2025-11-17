@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
+class USphereComponent;
+class USkeletalMeshComponent;
+
 UCLASS()
 class ARCHANGEL_API AWeapon : public AActor
 {
@@ -21,4 +24,14 @@ public:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	USphereComponent* SphereArea;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* WeaponMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* PickupWidget;
 };
