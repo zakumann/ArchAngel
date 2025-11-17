@@ -9,11 +9,13 @@
 AWeapon::AWeapon()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
 	SetRootComponent(WeaponMesh);
+
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetSimulatePhysics(true);
 
 
@@ -21,7 +23,7 @@ AWeapon::AWeapon()
 	SphereArea->SetupAttachment(WeaponMesh);
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
-	PickupWidget->SetupAttachment(GetRootComponent());
+	PickupWidget->SetupAttachment(RootComponent);
 }
 
 void AWeapon::BeginPlay()
