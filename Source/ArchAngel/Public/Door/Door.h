@@ -1,8 +1,10 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "DoorActor.generated.h"
+#include "Door.generated.h"
 
 class UBoxComponent;
 class UStaticMeshComponent;
@@ -18,15 +20,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	/** Root scene for easy organization */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USceneComponent* SceneRoot;
 
-	/** Collision area for detecting player proximity */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* TriggerBox;
 
-	/** The actual door mesh */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* DoorMesh;
 
@@ -34,9 +33,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door", meta = (AllowPrivateAccess = "true"))
 	FRotator ClosedRotation;
 
-	/** Open rotation of the door (relative) */
+	/** 180° open rotation (one direction) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door", meta = (AllowPrivateAccess = "true"))
-	FRotator OpenRotation;
+	FRotator OpenRotationA;
+
+	/** 180° open rotation (opposite direction) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door", meta = (AllowPrivateAccess = "true"))
+	FRotator OpenRotationB;
 
 	/** How fast the door rotates (deg/sec) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door", meta = (AllowPrivateAccess = "true"))
@@ -44,6 +47,9 @@ protected:
 
 	/** Whether the player is currently inside the trigger */
 	bool bPlayerInRange = false;
+
+	/** Current target rotation we interpolate toward */
+	FRotator TargetRotation;
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -67,9 +73,9 @@ protected:
 		int32 OtherBodyIndex
 	);
 
-	/** Opens the door (sets bPlayerInRange and we lerp in Tick) */
-	void OpenDoor();
+	/** Decide and set target open rotation based on player direction */
+	void OpenDoor(class APlayerCharacter* Player);
 
-	/** Closes the door */
+	/** Set target back to closed rotation */
 	void CloseDoor();
 };
