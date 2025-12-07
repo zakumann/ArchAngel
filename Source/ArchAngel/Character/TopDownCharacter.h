@@ -36,6 +36,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* FireAction;
+
 	/* ----------------- CAMERA ------------------ */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	USpringArmComponent* CameraBoom;
@@ -46,4 +49,7 @@ public:
 protected:
 	// Movement Input
 	void Move(const FInputActionValue& Value);
+
+	// Mouse rotation
+	void RotateToMouseCursor();
 };

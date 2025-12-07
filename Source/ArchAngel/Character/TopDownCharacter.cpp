@@ -62,6 +62,7 @@ void ATopDownCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	RotateToMouseCursor();
 }
 
 // Called to bind functionality to input
@@ -85,3 +86,36 @@ void ATopDownCharacter::Move(const FInputActionValue& Value)
 	AddMovementInput(FVector::RightVector, Movement.X);
 }
 
+void ATopDownCharacter::RotateToMouseCursor()
+{
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	if (!PC) return;
+
+	// Trace under the mouse cursor
+	FVector WorldLocation, WorldDirection;
+	if (PC->DeprojectMousePositionToWorld(WorldLocation, WorldDirection))
+	{
+		// Plane trace for ground (Z = character Z)
+		FVector Start = WorldLocation;
+		FVector End = Start + (WorldDirection * 10000.0f);
+
+		FHitResult HitResult;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+
+		if (GetWorld()->LineTraceSingleByChannel(
+			HitResult,
+			Start,
+			End,
+			ECC_Visibility,
+			Params))
+		{
+			FVector Target = HitResult.Location;
+			FVector Direction = Target - GetActorLocation();
+			Direction.Z = 0.f;     // flat rotate
+			FRotator NewRot = Direction.Rotation();
+
+			SetActorRotation(NewRot);
+		}
+	}
+}
