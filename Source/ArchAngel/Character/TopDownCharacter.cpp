@@ -73,6 +73,7 @@ void ATopDownCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATopDownCharacter::Move);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ATopDownCharacter::Fire);
 	}
 }
 
@@ -86,35 +87,39 @@ void ATopDownCharacter::Move(const FInputActionValue& Value)
 	AddMovementInput(FVector::RightVector, Movement.X);
 }
 
+void ATopDownCharacter::Fire()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Fire!"));
+}
+
 void ATopDownCharacter::RotateToMouseCursor()
 {
 	APlayerController* PC = Cast<APlayerController>(Controller);
 	if (!PC) return;
 
+	//Get the character's current height (Z-coordinate) to define the ground plane
+	const float CharacterHeight = GetActorLocation().Z;
+
+	// Define an infinite ground plane at the character's feet
+	const FPlane GroundPlane(FVector(0.f, 0.f, CharacterHeight), FVector(0.f, 0.f, 1.f));
+
 	// Trace under the mouse cursor
 	FVector WorldLocation, WorldDirection;
 	if (PC->DeprojectMousePositionToWorld(WorldLocation, WorldDirection))
 	{
-		// Plane trace for ground (Z = character Z)
-		FVector Start = WorldLocation;
-		FVector End = Start + (WorldDirection * 10000.0f);
+		// Calculate the intersection point between the mouse ray and the ground plane
+		FVector IntersectionPoint = FMath::RayPlaneIntersection(WorldLocation, WorldDirection, GroundPlane);
 
-		FHitResult HitResult;
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
+		// Calculate the direction vector from the character to the intersection point
+		FVector Direction = IntersectionPoint - GetActorLocation();
 
-		if (GetWorld()->LineTraceSingleByChannel(
-			HitResult,
-			Start,
-			End,
-			ECC_Visibility,
-			Params))
+		// Keep the direction vector flat (only X and Y movement) for top-down rotation
+		Direction.Z = 0.f;
+
+		// If the direction vector is valid (not zero length), calculate and set the new rotation
+		if (!Direction.IsNearlyZero())
 		{
-			FVector Target = HitResult.Location;
-			FVector Direction = Target - GetActorLocation();
-			Direction.Z = 0.f;     // flat rotate
 			FRotator NewRot = Direction.Rotation();
-
 			SetActorRotation(NewRot);
 		}
 	}

@@ -39,17 +39,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* FireAction;
 
-	/* ----------------- CAMERA ------------------ */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	USpringArmComponent* CameraBoom;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	UCameraComponent* TopDownCameraComponent;
-
-protected:
-	// Movement Input
-	void Move(const FInputActionValue& Value);
+private:
 
 	// Mouse rotation
 	void RotateToMouseCursor();
+
+protected:
+	/* ----------------- CAMERA ------------------ */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* TopDownCameraComponent;
+
+	// Movement Input
+	void Move(const FInputActionValue& Value);
+
+	void Fire();
 };

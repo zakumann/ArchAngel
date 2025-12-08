@@ -23,29 +23,24 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     if (OwnerCharacter && MovementComponent)
     {
-        // Get horizontal velocity
+        // Get horizontal velocity, immediately ignoring Z component
         const FVector Velocity = MovementComponent->Velocity;
-        const FVector LateralVelocity = FVector(Velocity.X, Velocity.Y, 0.f);
+        // Use GetSafeNormal() to normalize the vector and handle KINDA_SMALL_NUMBER internally
+        const FVector MoveDir = FVector(Velocity.X, Velocity.Y, 0.f).GetSafeNormal();
 
-        // Speed for blendspaces
-        Speed = LateralVelocity.Size();
+        // Speed is the magnitude of the lateral velocity
+        Speed = Velocity.Size2D();
 
-        // If not moving, direction is 0 (or keep last value if you prefer)
-        const float SpeedSq = LateralVelocity.SizeSquared();
-        if (SpeedSq <= KINDA_SMALL_NUMBER)
+        // If the character is moving (MoveDir is not zero vector after GetSafeNormal())
+        if (!MoveDir.IsNearlyZero())
         {
-            Direction = 0.0f;
-        }
-        else
-        {
-            // Normalize movement direction (XY plane)
-            const FVector MoveDir = LateralVelocity / FMath::Sqrt(SpeedSq);
-
             // Actor forward vector (XY plane)
+            // This is the direction the character is aiming/facing
             const FVector Forward = OwnerCharacter->GetActorForwardVector();
             const FVector Forward2D = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
 
-            // Signed angle between Forward2D and MoveDir:
+            // Calculate the signed angle (Direction) between the Aiming direction and the Movement direction
+
             // angle = atan2(cross.z, dot). range = [-PI, PI]
             const float Dot = FVector::DotProduct(Forward2D, MoveDir);
             const float CrossZ = FVector::CrossProduct(Forward2D, MoveDir).Z;
@@ -53,6 +48,11 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
             // Convert to degrees in [-180, 180]
             Direction = FMath::RadiansToDegrees(AngleRad);
+        }
+        else
+        {
+            // If not moving, Direction can safely be set to 0.0f
+            Direction = 0.0f;
         }
     }
 }
